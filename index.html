@@ -224,10 +224,10 @@
                 <label for="oil-separator">Oil Separator Model</label>
                 <select id="oil-separator" name="oil-separator">
                     <option value="" disabled selected>Select a model...</option>
-                    <option value="1">Model 1</option>
-                    <option value="2">Model 2</option>
-                    <option value="3">Model 3</option>
-                    <option value="4">Model 4</option>
+                    <option value="BOS4-CDH-1BFO">BOS4-CDH-1BFO</option>
+                    <option value="BOS4-CDH-1NFO">BOS4-CDH-1NFO</option>
+                    <option value="BOS4-CDH-1CFO">BOS4-CDH-1CFO</option>
+                    <option value="BOS4-CDH-1DFO">BOS4-CDH-1DFO</option>
                 </select>
             </div>
 
@@ -257,6 +257,21 @@
             <div class="output-group final-result">
                 <span class="output-label">Compressors Section Length:</span>
                 <span id="compressors-length" class="output-value">0 mm</span>
+            </div>
+        </div>
+
+        <div class="card grey-t">
+            <h2>Connections</h2>
+            <div class="input-group">
+                <label>Material</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="connections" value="inox" checked> Stainless Steel
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="connections" value="k65"> K65
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -333,26 +348,34 @@
                 <h2>Calculation Rules</h2>
                 <h3>Tanks Section</h3>
                 <ul>
-                    <li><strong>Base Length:</strong> Based on Liquid Receiver Volume (logic to be defined).</li>
+                    <li><strong>Base Length (based on Liquid Receiver Volume):</strong>
+                        <ul>
+                            <li>300L: 1500 mm</li>
+                            <li>460L: 1600 mm</li>
+                            <li>700L: 1900 mm</li>
+                            <li>1000L: 2300 mm</li>
+                            <li>2x570L: 2500 mm</li>
+                        </ul>
+                    </li>
                     <li><strong>Air Conditioning:</strong> Adds 1000 mm.</li>
                     <li><strong>Liquid Subcooler:</strong> Adds 300 mm.</li>
+                    <li><strong>Two Parts Configuration:</strong> Adds 100 mm.</li>
                 </ul>
     
                 <h3>Compressors Section</h3>
                 <h4>Lower Deck Length</h4>
                 <ul>
-                    <li><strong>MT + Aux (4-Cyl only):</strong> 500 mm per compressor.</li>
-                    <li><strong>MT + Aux (6-Cyl only):</strong> 700 mm per compressor.</li>
-                    <li><strong>MT + Aux (Mixed):</strong> 700 mm per total MT+Aux compressors.</li>
+                    <li><strong>MT/Aux Compressors (2/4-Cyl):</strong> 500 mm per compressor.</li>
+                    <li><strong>MT/Aux Compressors (6-Cyl):</strong> 700 mm per compressor.</li>
                     <li><strong>LT (6-Cyl):</strong> Adds 700 mm per compressor to this deck.</li>
-                    <li><strong>Oil Separator:</strong> Adds length based on model (logic to be defined).</li>
+                    <li><strong>Oil Separator:</strong> Adds length based on the selected model.</li>
                 </ul>
     
                 <h4>Upper Deck Length</h4>
                 <ul>
-                    <li><strong>LT (4-Cyl):</strong> 500 mm per compressor.</li>
+                    <li><strong>LT (2/4-Cyl):</strong> 500 mm per compressor.</li>
                     <li><strong>Heat Recoveries:</strong> Adds 500 mm per unit.</li>
-                    <li><strong>Oil Reserve:</strong> Adds a fixed 500 mm.</li>
+                    <li><strong>Oil Reserve:</strong> Adds a fixed 600 mm.</li>
                 </ul>
     
                 <h4>Final Compressors Length</h4>

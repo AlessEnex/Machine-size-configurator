@@ -5,10 +5,13 @@ import dataQuadri from './electricalPanelData.js';
 document.addEventListener('DOMContentLoaded', () => {
 
     let currentMachineWidth = 1200; // Global variable for machine width
+    let isManualOverrideActive = false; // Flag to track if override is active
 
     // --- GENERAL CONFIG ---
     const configurationRadios = document.querySelectorAll('input[name="configuration"]');
     const sumConfigRadios = document.querySelectorAll('input[name="sum-config"]');
+    const claddingRadios = document.querySelectorAll('input[name="cladding"]');
+    const connectionsRadios = document.querySelectorAll('input[name="connections"]');
 
     // --- TANKS SECTION ---
     const liquidReceiverSelect = document.getElementById('liquid-receiver-volume');
@@ -18,16 +21,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to calculate and update the tanks section length
     function calculateTanksLength() {
-        // --- BASE LENGTH LOGIC ---
-        // NOTE: The base length will depend on the selected liquid receiver volume.
-        // This logic will be implemented once the dimensions are provided.
-        // For now, we use a placeholder value of 0.
-        let baseLength = 0; 
-        
+        const selectedVolume = liquidReceiverSelect.value;
+
+        // Base length based on liquid receiver volume
+        const tankBaseLengths = {
+            "300L": 1500,
+            "460L": 1600,
+            "700L": 1900,
+            "1000L": 2300,
+            "2x570L": 2500
+        };
+
+        let baseLength = tankBaseLengths[selectedVolume] || 0;
+
         // Get the value from the Air Conditioning dropdown
         const hasAirConditioning = airConditioningSelect.value === 'yes';
         // Get the value from the Liquid Subcooler dropdown
         const hasLiquidSubcooler = liquidSubcoolerSelect.value === 'yes';
+        // Get the value from the Machine Configuration radio buttons
+        const configuration = document.querySelector('input[name="configuration"]:checked').value;
+        const connections = document.querySelector('input[name="connections"]:checked').value;
 
         // Add 1000mm if Air Conditioning is selected
         let finalLength = baseLength;
@@ -37,6 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add 300mm if Liquid Subcooler is selected
         if (hasLiquidSubcooler) {
             finalLength += 300;
+        }
+
+        // Add 100mm if configuration is "Two Parts"
+        if (configuration === 'two_parts') {
+            finalLength += 100;
+        }
+
+        // Add 100mm for K65 in two parts mode
+        if (connections === 'k65' && configuration === 'two_parts') {
+            finalLength += 100;
         }
 
         // Update the output display
@@ -107,9 +130,19 @@ document.addEventListener('DOMContentLoaded', () => {
             lowerDeckLength += numLt * getCompressorLength(typeLt);
         }
 
-        // Add length from oil separator (placeholder for now)
+        // Add length from oil separator
         let oilSeparatorLength = 0;
-        // NOTE: Logic for oil separator length will be added here based on the selected model.
+        const selectedOilSeparator = oilSeparatorSelect.value;
+        const oilSeparatorLengths = {
+            "BOS4-CDH-1BFO": 600,
+            "BOS4-CDH-1NFO": 600,
+            "BOS4-CDH-1CFO": 1000,
+            "BOS4-CDH-1DFO": 1000
+        };
+
+        if (selectedOilSeparator in oilSeparatorLengths) {
+            oilSeparatorLength = oilSeparatorLengths[selectedOilSeparator];
+        }
         lowerDeckLength += oilSeparatorLength;
 
         // --- Upper Deck Calculation ---
@@ -125,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         upperDeckLength += heatRecoveriesLength;
 
         // Add fixed length for oil reserve
-        const oilReserveLength = 500;
+        const oilReserveLength = 600;
         upperDeckLength += oilReserveLength;
 
         // Update the output displays
@@ -133,7 +166,16 @@ document.addEventListener('DOMContentLoaded', () => {
         upperDeckLengthOutput.textContent = `${upperDeckLength} mm`;
 
         // --- Final Length Calculation ---
-        const finalLength = Math.max(lowerDeckLength, upperDeckLength);
+        let finalLength = Math.max(lowerDeckLength, upperDeckLength);
+
+        const configuration = document.querySelector('input[name="configuration"]:checked').value;
+        const connections = document.querySelector('input[name="connections"]:checked').value;
+
+        // Add 100mm for K65 in two parts mode
+        if (connections === 'k65' && configuration === 'two_parts') {
+            finalLength += 100;
+        }
+
         compressorsLengthOutput.textContent = `${finalLength} mm`;
 
         updateVisualization();
@@ -232,17 +274,22 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 1; i < parts.length; i++) {
                 const prevPart = parts[i - 1];
                 const currentPart = parts[i];
-                let needsGap = true; // By default, parts are separated
+                let needsGap;
 
-                // A "sum" selection removes the gap between the relevant parts.
-                if (sumConfig === 'tanks_compressors' && prevPart.name === 'Tanks' && currentPart.name === 'Compressors') {
+                if (configuration === 'one_part') {
+                    // In "One Part" configuration, all blocks are always attached.
                     needsGap = false;
-                } else if (sumConfig === 'compressors_panel' && prevPart.name === 'Compressors' && currentPart.name === 'Electrical Panel') {
-                    needsGap = false;
-                } else if (sumConfig === 'all') {
-                    needsGap = false;
+                } else {
+                    // In "Two Parts", gaps are present by default but can be removed by sum config.
+                    needsGap = true; 
+                    if (sumConfig === 'tanks_compressors' && prevPart.name === 'Tanks' && currentPart.name === 'Compressors') {
+                        needsGap = false;
+                    } else if (sumConfig === 'compressors_panel' && prevPart.name === 'Compressors' && currentPart.name === 'Electrical Panel') {
+                        needsGap = false;
+                    } else if (sumConfig === 'all') {
+                        needsGap = false;
+                    }
                 }
-
                 gaps[i] = needsGap;
                 if (needsGap) {
                     totalGapWidth += gapSize;
@@ -348,12 +395,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function populatePanelSelector() {
+        const configuration = document.querySelector('input[name="configuration"]:checked').value;
+        const previouslySelectedValue = panelModelSelect.value;
+
+        // Clear existing options but keep the placeholder
+        panelModelSelect.innerHTML = '<option value="" selected>Select a panel...</option>';
+
         dataQuadri.forEach((panel, index) => {
+            // If 'one_part' is selected, only show 'B2B' panels.
+            if (configuration === 'one_part' && panel.typ !== 'B2B') {
+                return; // Skip this panel
+            }
+
             const option = document.createElement('option');
             option.value = index;
             option.textContent = `${panel.typ === 'T' ? 'Head' : 'B2B'}: ${panel.L}x${panel.H}x${panel.W}`;
             panelModelSelect.appendChild(option);
         });
+
+        // Try to restore the previous selection.
+        panelModelSelect.value = previouslySelectedValue;
+
+        // If the value changed (because the previous option was removed), trigger an update.
+        if (panelModelSelect.value !== previouslySelectedValue) {
+            handlePanelTypeChange();
+        }
     }
 
     function handlePanelTypeChange() {
@@ -372,8 +438,38 @@ document.addEventListener('DOMContentLoaded', () => {
     panelModelSelect.addEventListener('change', handlePanelTypeChange);
     orientationSelect.addEventListener('change', calculateElectricalPanelLength);
 
+    function handleConfigurationChange() {
+        calculateTanksLength();
+        calculateCompressorsLength();
+        populatePanelSelector();
+    }
+
+    function handleCladdingChange() {
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
+        const onePartRadio = document.querySelector('input[name="configuration"][value="one_part"]');
+        const twoPartsRadio = document.querySelector('input[name="configuration"][value="two_parts"]');
+
+        if (claddingValue === 'yes') {
+            // If cladding is present, force "One Part" and disable the "Two Parts" option.
+            twoPartsRadio.disabled = true;
+            if (twoPartsRadio.checked) {
+                onePartRadio.checked = true;
+                // Manually trigger the change event to ensure all related logic runs
+                onePartRadio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else {
+            // If cladding is not present, re-enable the "Two Parts" option.
+            twoPartsRadio.disabled = false;
+        }
+    }
+
     // --- GENERAL CONFIG LISTENERS ---
-    configurationRadios.forEach(radio => radio.addEventListener('change', updateVisualization));
+    connectionsRadios.forEach(radio => radio.addEventListener('change', () => {
+        calculateTanksLength();
+        calculateCompressorsLength();
+    }));
+    claddingRadios.forEach(radio => radio.addEventListener('change', handleCladdingChange));
+    configurationRadios.forEach(radio => radio.addEventListener('change', handleConfigurationChange));
     sumConfigRadios.forEach(radio => radio.addEventListener('change', updateVisualization));
 
     // --- INITIAL CALCULATIONS ON PAGE LOAD ---
@@ -387,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
     populatePanelSelector();
     calculateElectricalPanelLength();
     handlePanelTypeChange(); // Set initial visibility for panel orientation
+    handleCladdingChange(); // Set initial state for cladding-dependent options
 
     // --- MODAL LOGIC ---
     const showRulesBtn = document.getElementById('show-rules-btn');
@@ -408,6 +505,26 @@ document.addEventListener('DOMContentLoaded', () => {
             rulesModal.classList.add('hidden');
         }
     });
+
+    // Add a global change listener to reset manual overrides when any option is changed.
+    const configuratorContainer = document.querySelector('.configurator-container');
+    if (configuratorContainer) {
+        configuratorContainer.addEventListener('change', (event) => {
+            // Ignore changes originating from within the override modal itself
+            if (event.target.closest('#override-modal')) {
+                return;
+            }
+
+            if (isManualOverrideActive) {
+                // This is the first change after an override was applied.
+                // Reset the flag.
+                isManualOverrideActive = false;
+                // Reset machine width to its default. Lengths are reset automatically
+                // because their calculation functions will run and overwrite the display.
+                currentMachineWidth = 1200;
+            }
+        });
+    }
 
     // --- MODAL LOGIC (Override) ---
     const showOverrideBtn = document.getElementById('show-override-btn');
@@ -442,10 +559,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const newCompressorsLength = parseInt(manualCompressorsLength.value);
         const newWidth = parseInt(manualMachineWidth.value);
 
+        let overrideApplied = false;
+
         // Update values if the inputs are not empty/invalid
-        if (!isNaN(newTanksLength)) tanksLengthOutput.textContent = `${newTanksLength} mm`;
-        if (!isNaN(newCompressorsLength)) compressorsLengthOutput.textContent = `${newCompressorsLength} mm`;
-        if (!isNaN(newWidth) && newWidth > 0) currentMachineWidth = newWidth;
+        if (!isNaN(newTanksLength)) {
+            tanksLengthOutput.textContent = `${newTanksLength} mm`;
+            overrideApplied = true;
+        }
+        if (!isNaN(newCompressorsLength)) {
+            compressorsLengthOutput.textContent = `${newCompressorsLength} mm`;
+            overrideApplied = true;
+        }
+        if (!isNaN(newWidth) && newWidth > 0) {
+            currentMachineWidth = newWidth;
+            overrideApplied = true;
+        }
+
+        if (overrideApplied) {
+            isManualOverrideActive = true;
+        }
 
         // Redraw and close
         updateVisualization();
@@ -586,6 +718,9 @@ Overall Dimensions
             doc.addImage(imgData, 'PNG', margin, finalY, imgWidth, imgHeight);
             doc.save('Elba_Configurator_Summary.pdf');
 
+        }).catch(err => {
+            console.error('Failed to generate PDF:', err);
+            alert('An error occurred while generating the PDF. Please try again.');
         }).finally(() => {
             downloadPdfBtn.textContent = originalBtnText;
             downloadPdfBtn.disabled = false;
