@@ -1,0 +1,448 @@
+/* styles.css - Centralized application styles */
+
+:root {
+  --primary-color: #007bff;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ff9800;
+  --electrical-panel-color: #64b5f6; /* Light Blue */
+  --purple-color: #007bff; /* Medium Blue for compressors */
+  --tanks-color: #004085; /* Dark Blue */
+  --grey-color: #9e9e9e;
+  --border-color: #ccc;
+  --bg-light: #f0f2f5;
+  --bg-card: #fff;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 30px;
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+  color: #444;
+  margin-bottom: 15px;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 1.1em;
+  color: #555;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+}
+
+/* === CARTE/SEZIONI === */
+.card {
+  background: var(--bg-card);
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.card.blue-t { border-left: 6px solid var(--tanks-color); }
+.card.green-t { border-left: 6px solid var(--success-color); }
+.card.purple-t { border-left: 6px solid var(--purple-color); }
+.card.orange-t { border-left: 6px solid var(--electrical-panel-color); }
+.card.grey-t { border-left: 6px solid var(--grey-color); }
+
+/* New layout for Cladding, Tanks, Compressors */
+.three-column-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start; /* Align cards to the top */
+}
+
+.three-column-layout > .card,
+.three-column-layout > .layout-column {
+    flex: 1; /* Each child takes up equal space */
+}
+
+/* New layout for compressor selection */
+.compressor-grid {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.compressor-column {
+    flex: 1;
+}
+
+
+/* Specific layout for Job Info */
+.job-info-grid {
+    display: flex;
+    gap: 20px;
+}
+
+.job-info-grid .input-group {
+    flex: 1;
+    /* Reset margin-bottom as gap is used for horizontal spacing */
+    margin-bottom: 0;
+}
+
+/* === FORM ELEMENTS === */
+.input-group {
+    margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--bg-card);
+  font-size: 1em;
+  transition: border-color 0.3s;
+}
+
+select {
+  cursor: pointer;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* === Radio Button Group === */
+.radio-group {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal; /* Override the default label bold */
+    font-size: 1em;
+    margin-bottom: 0; /* Override default label margin */
+}
+
+.radio-label input[type="radio"] {
+    margin-right: 8px;
+    accent-color: var(--primary-color);
+}
+
+/* === BUTTONS === */
+.info-button {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.info-button:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* === SEPARATOR & RESULTS === */
+.section-separator {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+
+.output-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding: 5px 0;
+}
+
+.output-label {
+    font-size: 0.95em;
+    color: var(--text-secondary);
+}
+
+.output-value {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+/* Final result in a section */
+.output-group.final-result .output-label {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.output-group.final-result .output-value {
+    font-size: 1.3em;
+    color: var(--primary-color);
+}
+
+/* Controls before visualization */
+.pre-visualization-controls {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.export-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: -10px; /* Pull it closer to the card above */
+    margin-bottom: 30px;
+}
+
+
+/* === 2D DRAWING SECTION === */
+.drawing-container {
+  display: none; /* Hidden by default, managed by JS */
+}
+
+.drawing-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100px; /* Minimum height, the real height is dynamic via JS */
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+}
+
+.parts-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+}
+
+.drawing-part {
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 0.9em;
+  transition: width 0.4s ease-in-out;
+  width: 0; /* Initially 0, managed by JS */
+  overflow: hidden;
+  padding: 5px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.drawing-part:last-child {
+    border-right: none;
+}
+
+.part-dimensions {
+    margin-top: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.dimensions-container {
+    width: 100%;
+    height: 30px; /* Height for the dimension lines */
+    position: relative;
+    margin-top: 5px;
+}
+
+.dimension-line {
+    position: absolute;
+    bottom: 10px; /* Position from the bottom of the container */
+    height: 15px;
+    border-left: 1px solid var(--text-primary);
+    border-right: 1px solid var(--text-primary);
+    border-bottom: 1px solid var(--text-primary);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.dimension-text {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    padding: 0 4px;
+    transform: translateY(50%); /* Center vertically on the line */
+}
+
+.drawing-part + .drawing-part {
+    border-left: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.blue-bg { background-color: var(--tanks-color); }
+.purple-bg { background-color: var(--purple-color); }
+.orange-bg { background-color: var(--electrical-panel-color); }
+
+.placeholder-text {
+    width: 100%;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+/* === MODAL === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 700px;
+    position: relative;
+    max-height: 85vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: transform 0.3s;
+}
+
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.8em;
+    font-weight: 300;
+    color: #aaa;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close-button:hover {
+    color: var(--text-primary);
+}
+
+.modal-content h2 {
+    font-size: 1.3em;
+}
+
+.modal-content p {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.modal-content h3, .modal-content h4 {
+    color: var(--primary-color);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-content ul {
+    padding-left: 20px;
+    list-style: disc;
+}
+
+.modal-content li {
+    margin-bottom: 0.7rem;
+}
+
+/* Utility class to hide elements */
+.hidden {
+    display: none;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1200px) {
+    .three-column-layout {
+        flex-direction: column;
+        align-items: stretch; /* Make cards full width */
+    }
+
+    .compressor-grid {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+    margin: 10px auto;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 1.5em;
+  }
+
+  .job-info-grid {
+      flex-direction: column;
+      gap: 0;
+  }
+
+  .job-info-grid .input-group {
+      margin-bottom: 20px;
+  }
+}

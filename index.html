@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elba Size Configurator</title>
+    <link rel="stylesheet" href="style.css"> <!-- Collega il file CSS -->
+</head>
+<body>
+
+    <div class="configurator-container">
+        <div class="header">
+            <h1>Elba Size Configurator</h1>
+            <button id="show-rules-btn" class="info-button">Calculation Rules</button>
+        </div>
+
+        <div class="card grey-t">
+            <h2>Job Information</h2>
+
+            <div class="job-info-grid">
+                <div class="input-group">
+                    <label for="job-year">Job Year</label>
+                    <input type="number" id="job-year" name="job-year" placeholder="e.g., 2024">
+                </div>
+    
+                <div class="input-group">
+                    <label for="offer-number">Offer Number</label>
+                    <input type="text" id="offer-number" name="offer-number" placeholder="e.g., Q-12345">
+                </div>
+    
+                <div class="input-group">
+                    <label for="job-number">Job Number</label>
+                    <input type="text" id="job-number" name="job-number" placeholder="e.g., C-67890">
+                </div>
+    
+                <div class="input-group">
+                    <label for="job-name">Job Name</label>
+                    <input type="text" id="job-name" name="job-name" placeholder="e.g., Customer Project Name">
+                </div>
+            </div>
+        </div>
+
+        <div class="three-column-layout">
+            <div class="layout-column">
+                <div class="card grey-t">
+                    <h2>Cladding</h2>
+                    <div class="input-group">
+                        <label>Cladding Present</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="cladding" value="yes"> Yes
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="cladding" value="no" checked> No
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card grey-t">
+                    <h2>Machine Configuration</h2>
+                    <div class="input-group">
+                        <label>Configuration</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="configuration" value="one_part" checked> One Part
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="configuration" value="two_parts"> Two Parts
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card blue-t">
+                <h2>Tanks</h2>
+    
+                <div class="input-group">
+                    <label for="liquid-receiver-volume">Liquid Receiver Volume</label>
+                    <select id="liquid-receiver-volume" name="liquid-receiver-volume">
+                        <option value="" disabled selected>Select a volume...</option>
+                        <option value="150L">150L</option>
+                        <option value="300L">300L</option>
+                        <option value="460L">460L</option>
+                        <option value="700L">700L</option>
+                        <option value="1000L">1000L</option>
+                        <option value="2x570L">2x570L</option>
+                    </select>
+                </div>
+    
+                <div class="input-group">
+                    <label for="air-conditioning">Air Conditioning</label>
+                    <select id="air-conditioning" name="air-conditioning">
+                        <option value="no" selected>No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+    
+                <div class="input-group">
+                    <label for="liquid-subcooler">Liquid Subcooler</label>
+                    <select id="liquid-subcooler" name="liquid-subcooler">
+                        <option value="no" selected>No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </div>
+    
+                <hr class="section-separator">
+    
+                <div class="output-group final-result">
+                    <span class="output-label">Tanks Section Length:</span>
+                    <span id="tanks-length" class="output-value">0 mm</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card purple-t">
+            <h2>Compressors</h2>
+
+            <div class="compressor-grid">
+                <div class="compressor-column">
+                    <!-- MT Compressors -->
+                    <div class="input-group">
+                        <label for="num-mt">Number of MT Compressors</label>
+                        <select id="num-mt" name="num-mt">
+                            <option value="0" selected>0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                    <div class="input-group hidden" id="type-mt-group">
+                        <label>MT Compressor Type</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="type-mt" value="2cyl"> 2-Cylinder
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type-mt" value="4cyl" checked> 4-Cylinder
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type-mt" value="6cyl"> 6-Cylinder
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compressor-column">
+                    <!-- Aux Compressors -->
+                    <div class="input-group">
+                        <label for="num-aux">Number of Aux Compressors</label>
+                        <select id="num-aux" name="num-aux">
+                            <option value="0" selected>0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                    <div class="input-group hidden" id="type-aux-group">
+                        <label>Aux Compressor Type</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="type-aux" value="2cyl"> 2-Cylinder
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type-aux" value="4cyl" checked> 4-Cylinder
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type-aux" value="6cyl"> 6-Cylinder
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compressor-column">
+                    <!-- LT Compressors -->
+                    <div class="input-group">
+                        <label for="num-lt">Number of LT Compressors</label>
+                        <select id="num-lt" name="num-lt">
+                            <option value="0" selected>0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                    <div class="input-group hidden" id="type-lt-group">
+                        <label>LT Compressor Type</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="type-lt" value="2cyl"> 2-Cylinder
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type-lt" value="4cyl" checked> 4-Cylinder
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="type-lt" value="6cyl"> 6-Cylinder
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="oil-separator">Oil Separator Model</label>
+                <select id="oil-separator" name="oil-separator">
+                    <option value="" disabled selected>Select a model...</option>
+                    <option value="1">Model 1</option>
+                    <option value="2">Model 2</option>
+                    <option value="3">Model 3</option>
+                    <option value="4">Model 4</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="heat-recoveries">Number of Heat Recoveries</label>
+                <select id="heat-recoveries" name="heat-recoveries">
+                    <option value="0" selected>0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+
+            <hr class="section-separator">
+
+            <div class="output-group">
+                <span class="output-label">Lower Deck Length:</span>
+                <span id="lower-deck-length" class="output-value">0 mm</span>
+            </div>
+
+            <div class="output-group">
+                <span class="output-label">Upper Deck Length:</span>
+                <span id="upper-deck-length" class="output-value">0 mm</span>
+            </div>
+
+            <hr class="section-separator">
+
+            <div class="output-group final-result">
+                <span class="output-label">Compressors Section Length:</span>
+                <span id="compressors-length" class="output-value">0 mm</span>
+            </div>
+        </div>
+
+        <div class="card orange-t">
+            <h2>Electrical Panel</h2>
+
+            <div class="input-group">
+                <label for="electrical-panel-model">Panel Model (L x H x W)</label>
+                <select id="electrical-panel-model" name="electrical-panel-model">
+                    <option value="" selected>Select a panel...</option>
+                </select>
+            </div>
+
+            <div id="orientation-group" class="input-group hidden">
+                <label for="electrical-panel-orientation">Panel Orientation</label>
+                <select id="electrical-panel-orientation" name="electrical-panel-orientation">
+                    <option value="aligned" selected>Aligned</option>
+                    <option value="perpendicular">Perpendicular</option>
+                </select>
+            </div>
+
+            <hr class="section-separator">
+
+            <div class="output-group final-result">
+                <span class="output-label">Electrical Panel Length:</span>
+                <span id="electrical-panel-length" class="output-value">0 mm</span>
+            </div>
+        </div>
+
+        <div class="card grey-t">
+            <h2>Sum Configuration</h2>
+            <div class="input-group">
+                <label>Select which parts to group in the 2D visualization:</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="sum-config" value="none" checked> None
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="sum-config" value="tanks_compressors"> Tanks + Compressors
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="sum-config" value="compressors_panel"> Compressors + Panel
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="sum-config" value="all"> All
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="pre-visualization-controls">
+            <button id="show-override-btn" class="info-button">Manual Override</button>
+        </div>
+
+        <div class="card drawing-container" id="visualization-container">
+            <h2>2D Visualization</h2>
+            <div class="drawing-wrapper" id="visualization-wrapper">
+                <div class="parts-container" id="parts-container"></div>
+                <div class="dimensions-container" id="dimensions-container"></div>
+            </div>
+        </div>
+
+        <div class="export-controls">
+            <button id="copy-summary-btn" class="info-button">Copy Summary</button>
+            <button id="download-pdf-btn" class="info-button">Download PDF</button>
+        </div>
+
+        <!-- Qui verranno aggiunte le altre sezioni del configuratore -->
+
+        <!-- Modal for Calculation Rules -->
+        <div id="rules-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button id="close-rules-btn" class="modal-close-button">&times;</button>
+                <h2>Calculation Rules</h2>
+                <h3>Tanks Section</h3>
+                <ul>
+                    <li><strong>Base Length:</strong> Based on Liquid Receiver Volume (logic to be defined).</li>
+                    <li><strong>Air Conditioning:</strong> Adds 1000 mm.</li>
+                    <li><strong>Liquid Subcooler:</strong> Adds 300 mm.</li>
+                </ul>
+    
+                <h3>Compressors Section</h3>
+                <h4>Lower Deck Length</h4>
+                <ul>
+                    <li><strong>MT + Aux (4-Cyl only):</strong> 500 mm per compressor.</li>
+                    <li><strong>MT + Aux (6-Cyl only):</strong> 700 mm per compressor.</li>
+                    <li><strong>MT + Aux (Mixed):</strong> 700 mm per total MT+Aux compressors.</li>
+                    <li><strong>LT (6-Cyl):</strong> Adds 700 mm per compressor to this deck.</li>
+                    <li><strong>Oil Separator:</strong> Adds length based on model (logic to be defined).</li>
+                </ul>
+    
+                <h4>Upper Deck Length</h4>
+                <ul>
+                    <li><strong>LT (4-Cyl):</strong> 500 mm per compressor.</li>
+                    <li><strong>Heat Recoveries:</strong> Adds 500 mm per unit.</li>
+                    <li><strong>Oil Reserve:</strong> Adds a fixed 500 mm.</li>
+                </ul>
+    
+                <h4>Final Compressors Length</h4>
+                <p>The final length for the compressors section is the <strong>longer</strong> of the Lower Deck and Upper Deck lengths.</p>
+            </div>
+        </div>
+
+        <!-- Modal for Manual Override -->
+        <div id="override-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button id="close-override-btn" class="modal-close-button">&times;</button>
+                <h2>Manual Dimension Override</h2>
+                
+                <p>Enter values below to manually override the calculated dimensions. Changes are temporary and will be reset if you modify the options above.</p>
+
+                <div class="input-group">
+                    <label for="manual-tanks-length">Tanks Section Length (mm)</label>
+                    <input type="number" id="manual-tanks-length" placeholder="e.g., 3500">
+                </div>
+
+                <div class="input-group">
+                    <label for="manual-compressors-length">Compressors Section Length (mm)</label>
+                    <input type="number" id="manual-compressors-length" placeholder="e.g., 4200">
+                </div>
+
+                <hr class="section-separator">
+
+                <div class="input-group">
+                    <label for="manual-machine-width">Overall Machine Width (mm)</label>
+                    <input type="number" id="manual-machine-width" placeholder="e.g., 1000">
+                </div>
+
+                <button id="apply-override-btn" class="info-button">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="main.js" type="module" defer></script>
+
+</body>
+</html>
