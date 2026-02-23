@@ -79,7 +79,6 @@
                     <label for="liquid-receiver-volume">Liquid Receiver Volume</label>
                     <select id="liquid-receiver-volume" name="liquid-receiver-volume">
                         <option value="" disabled selected>Select a volume...</option>
-                        <option value="150L">150L</option>
                         <option value="300L">300L</option>
                         <option value="460L">460L</option>
                         <option value="700L">700L</option>
@@ -393,19 +392,19 @@
 
                 <div class="input-group">
                     <label for="manual-tanks-length">Tanks Section Length (mm)</label>
-                    <input type="number" id="manual-tanks-length" placeholder="e.g., 3500">
+                    <input type="number" id="manual-tanks-length" placeholder="e.g., 3500" min="0">
                 </div>
 
                 <div class="input-group">
                     <label for="manual-compressors-length">Compressors Section Length (mm)</label>
-                    <input type="number" id="manual-compressors-length" placeholder="e.g., 4200">
+                    <input type="number" id="manual-compressors-length" placeholder="e.g., 4200" min="0">
                 </div>
 
                 <hr class="section-separator">
 
                 <div class="input-group">
                     <label for="manual-machine-width">Overall Machine Width (mm)</label>
-                    <input type="number" id="manual-machine-width" placeholder="e.g., 1000">
+                    <input type="number" id="manual-machine-width" placeholder="e.g., 1000" min="0">
                 </div>
 
                 <button id="apply-override-btn" class="info-button">Apply Changes</button>

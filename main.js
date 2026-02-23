@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- GENERAL CONFIG ---
     const configurationRadios = document.querySelectorAll('input[name="configuration"]');
     const sumConfigRadios = document.querySelectorAll('input[name="sum-config"]');
+    const sumConfigCard = document.querySelector('input[name="sum-config"]').closest('.card');
     const claddingRadios = document.querySelectorAll('input[name="cladding"]');
     const connectionsRadios = document.querySelectorAll('input[name="connections"]');
 
@@ -18,6 +19,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const airConditioningSelect = document.getElementById('air-conditioning');
     const liquidSubcoolerSelect = document.getElementById('liquid-subcooler');
     const tanksLengthOutput = document.getElementById('tanks-length');
+
+    function getGeneralConfig() {
+        const configuration = document.querySelector('input[name="configuration"]:checked').value;
+        const connections = document.querySelector('input[name="connections"]:checked').value;
+        return { configuration, connections };
+    }
+
+    function updateSumConfigState() {
+        const tanksDefined = liquidReceiverSelect.value !== '';
+        
+        const compressorsDefined = (parseInt(numMtSelect.value) > 0) ||
+                                   (parseInt(numAuxSelect.value) > 0) ||
+                                   (parseInt(numLtSelect.value) > 0) ||
+                                   (oilSeparatorSelect.value !== '') ||
+                                   (parseInt(heatRecoveriesSelect.value) > 0);
+
+        const panelDefined = panelModelSelect.value !== '';
+
+        const allDefined = tanksDefined && compressorsDefined && panelDefined;
+
+        // Disable all radio buttons in the group if conditions are not met
+        sumConfigRadios.forEach(radio => {
+            radio.disabled = !allDefined;
+        });
+        
+        if (sumConfigCard) {
+            sumConfigCard.style.opacity = allDefined ? '1' : '0.6';
+            sumConfigCard.title = allDefined ? '' : 'Please define Tanks, Compressors, and Electrical Panel sections first.';
+        }
+
+        // If the section becomes disabled, reset the selection to "None"
+        // and update the visualization to remove any summed dimension lines.
+        if (!allDefined) {
+            const noneRadio = document.querySelector('input[name="sum-config"][value="none"]');
+            if (noneRadio) {
+                noneRadio.checked = true;
+                updateVisualization();
+            }
+        }
+    }
 
     // Function to calculate and update the tanks section length
     function calculateTanksLength() {
@@ -38,9 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasAirConditioning = airConditioningSelect.value === 'yes';
         // Get the value from the Liquid Subcooler dropdown
         const hasLiquidSubcooler = liquidSubcoolerSelect.value === 'yes';
-        // Get the value from the Machine Configuration radio buttons
-        const configuration = document.querySelector('input[name="configuration"]:checked').value;
-        const connections = document.querySelector('input[name="connections"]:checked').value;
+        const { configuration, connections } = getGeneralConfig();
 
         // Add 1000mm if Air Conditioning is selected
         let finalLength = baseLength;
@@ -65,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update the output display
         tanksLengthOutput.textContent = `${finalLength} mm`;
         updateVisualization();
+        updateSumConfigState();
     }
 
     // Add event listeners for the tanks section
@@ -168,8 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Final Length Calculation ---
         let finalLength = Math.max(lowerDeckLength, upperDeckLength);
 
-        const configuration = document.querySelector('input[name="configuration"]:checked').value;
-        const connections = document.querySelector('input[name="connections"]:checked').value;
+        const { configuration, connections } = getGeneralConfig();
 
         // Add 100mm for K65 in two parts mode
         if (connections === 'k65' && configuration === 'two_parts') {
@@ -179,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         compressorsLengthOutput.textContent = `${finalLength} mm`;
 
         updateVisualization();
+        updateSumConfigState();
     }
 
     // Add event listeners for the compressors section
@@ -230,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { length: panelLength } = getElectricalPanelDimensions();
         electricalPanelLengthOutput.textContent = `${panelLength} mm`;
         updateVisualization();
+        updateSumConfigState();
     }
 
     // --- VISUALIZATION ---
@@ -562,11 +603,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let overrideApplied = false;
 
         // Update values if the inputs are not empty/invalid
-        if (!isNaN(newTanksLength)) {
+        if (!isNaN(newTanksLength) && newTanksLength >= 0) {
             tanksLengthOutput.textContent = `${newTanksLength} mm`;
             overrideApplied = true;
         }
-        if (!isNaN(newCompressorsLength)) {
+        if (!isNaN(newCompressorsLength) && newCompressorsLength >= 0) {
             compressorsLengthOutput.textContent = `${newCompressorsLength} mm`;
             overrideApplied = true;
         }
