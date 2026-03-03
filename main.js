@@ -4,6 +4,25 @@ import dataQuadri from './electricalPanelData.js';
 // Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
+    /**
+     * Debounce function to limit the rate at which a function gets called.
+     * This is used to prevent the resize event from firing the visualization update too frequently.
+     * @param {Function} func The function to debounce.
+     * @param {number} wait The delay in milliseconds.
+     * @returns {Function} The debounced function.
+     */
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
     let currentMachineWidth = 1200; // Global variable for machine width
     let machineHeight = 0; // Global variable for machine height
     let tanksSectionWidth = 1200; // Global variable for tanks section width
@@ -1325,4 +1344,9 @@ Electrical Panel
             });
         }, 100); // 100ms delay
     });
+
+    // --- RESIZE HANDLING ---
+    // Redraw visualization on window resize to ensure it scales correctly.
+    // Use debounce to prevent excessive recalculations during resizing.
+    window.addEventListener('resize', debounce(updateVisualization, 200));
 });
