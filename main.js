@@ -94,9 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tankType === 'single') {
             const selectedVolume = liquidReceiverSelect.value;
             // Set tanks section width based on selection
-            if (selectedVolume === '150L/185L') {
+            if (selectedVolume === '150L/185L' || selectedVolume === '300L' || selectedVolume === '350L') {
                 tanksSectionWidth = 1000;
-            } else if (selectedVolume === '300L' || selectedVolume === '350L') {
+            } else if (selectedVolume === '460L') {
                 tanksSectionWidth = 1100;
             } else {
                 tanksSectionWidth = 1200;
@@ -992,6 +992,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const copySummaryBtn = document.getElementById('copy-summary-btn');
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
 
+    // --- PDF MODAL ELEMENTS ---
+    const pdfOptionsModal = document.getElementById('pdf-options-modal');
+    const closePdfOptionsBtn = document.getElementById('close-pdf-options-btn');
+    const pdfPreviewsContainer = document.getElementById('pdf-previews-container');
+    const generateSelectedPdfBtn = document.getElementById('generate-selected-pdf-btn');
+
+
     function getElementValue(id, isSelectText = false) {
         const element = document.getElementById(id);
         if (!element) {
@@ -1040,22 +1047,6 @@ Job Information
 General
 - Cladding Present: ${getElementValue('cladding', true)}
 - Machine Configuration: ${getElementValue('configuration', true)}
-
-================================
-Tanks
-- Tank Type: ${getElementValue('tank-type', true)}
-- Liquid Receiver Volume: ${getElementValue('liquid-receiver-volume', true) !== 'Select a volume...' ? getElementValue('liquid-receiver-volume', true) : getElementValue('coupled-liquid-receiver-volume', true)}
-- MT Suction Accumulator Volume: ${getElementValue('mt-suction-accumulator-volume', true)}
-- Secondary Line Accumulator: ${getElementValue('secondary-line-accumulator', true)}
-- Air Conditioning: ${getElementValue('air-conditioning', true)}
-
-================================
-Compressors
-- MT Compressors: ${getElementValue('num-mt')} (${getElementValue('type-mt', true)})
-- Aux Compressors: ${getElementValue('num-aux')} (${getElementValue('type-aux', true)})
-- LT Compressors: ${getElementValue('num-lt')} (${getElementValue('type-lt', true)})
-- Oil Separator Model: ${getElementValue('oil-separator', true)}
-- Number of Heat Recoveries: ${getElementValue('heat-recoveries')}
 `;
 
         summary += `
@@ -1083,31 +1074,101 @@ Electrical Panel
     });
 
     downloadPdfBtn.addEventListener('click', () => {
+        pdfPreviewsContainer.innerHTML = ''; // Clear previous previews
+    
+        const visibleVisualizations = Array.from(multiVisualizationContainer.querySelectorAll('.card.drawing-container:not(.hidden)'));
+    
+        visibleVisualizations.forEach((vizCard, index) => {
+            const title = vizCard.querySelector('h2').textContent;
+            const vizClone = vizCard.cloneNode(true); // Deep clone the visualization card
+            
+            // Remove IDs from the clone to avoid duplicates in the DOM
+            vizClone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    
+            const previewWrapper = document.createElement('div');
+            previewWrapper.className = 'pdf-preview-item';
+    
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `pdf-option-${index}`;
+            // Store a reference to the original card's index relative to all cards in the container
+            const originalIndex = Array.from(multiVisualizationContainer.children).indexOf(vizCard);
+            checkbox.dataset.sourceCardIndex = originalIndex;
+            checkbox.checked = true; // Default to selected
+    
+            const label = document.createElement('label');
+            label.htmlFor = `pdf-option-${index}`;
+            label.textContent = title;
+    
+            const header = document.createElement('div');
+            header.className = 'pdf-preview-header';
+            header.appendChild(checkbox);
+            header.appendChild(label);
+            
+            // Create a wrapper for scaling the preview content
+            const previewContentWrapper = document.createElement('div');
+            previewContentWrapper.className = 'pdf-preview-content-wrapper';
+            previewContentWrapper.appendChild(vizClone);
+
+            previewWrapper.appendChild(header);
+            previewWrapper.appendChild(previewContentWrapper);
+    
+            pdfPreviewsContainer.appendChild(previewWrapper);
+        });
+    
+        pdfOptionsModal.classList.remove('hidden');
+    });
+
+    // PDF Modal close logic
+    closePdfOptionsBtn.addEventListener('click', () => pdfOptionsModal.classList.add('hidden'));
+    pdfOptionsModal.addEventListener('click', (event) => {
+        if (event.target === pdfOptionsModal) {
+            pdfOptionsModal.classList.add('hidden');
+        }
+    });
+
+    generateSelectedPdfBtn.addEventListener('click', () => {
+        const selectedCheckboxes = pdfPreviewsContainer.querySelectorAll('input[type="checkbox"]:checked');
+
+        if (selectedCheckboxes.length === 0) {
+            alert('Please select at least one configuration to include in the PDF.');
+            return;
+        }
+
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const summaryText = generateSummaryText();
         const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
 
-        const originalBtnText = downloadPdfBtn.textContent;
-        downloadPdfBtn.textContent = 'Generating...';
-        downloadPdfBtn.disabled = true;
+        const originalBtnText = generateSelectedPdfBtn.textContent;
+        generateSelectedPdfBtn.textContent = 'Generating...';
+        generateSelectedPdfBtn.disabled = true;
+        downloadPdfBtn.disabled = true; // Also disable the main button
 
         document.body.classList.add('pdf-export-active');
 
         // Use a short timeout to allow the browser to apply the 'pdf-export-active' styles
-        // before html2canvas starts rendering. This helps prevent race conditions.
         setTimeout(() => {
             const margin = 15;
             const contentWidth = doc.internal.pageSize.getWidth() - (margin * 2);
 
+            // --- Get the cards that were selected for rendering ---
+            const vizCardsToRender = [];
+            selectedCheckboxes.forEach(checkbox => {
+                const sourceIndex = parseInt(checkbox.dataset.sourceCardIndex);
+                const originalCard = multiVisualizationContainer.children[sourceIndex];
+                if (originalCard) {
+                    vizCardsToRender.push(originalCard);
+                }
+            });
+
             // --- Temporarily change visualization titles for PDF ---
-            const vizCards = multiVisualizationContainer.querySelectorAll('.card.drawing-container');
             const originalTitles = [];
 
             // --- Add checkbox options for PDF ---
             const addedCheckboxes = [];
             if (claddingValue === 'no') {
-                vizCards.forEach(card => {
+                vizCardsToRender.forEach(card => {
                     const checkboxContainer = document.createElement('div');
                     checkboxContainer.className = 'pdf-checkbox-options';
                     checkboxContainer.innerHTML = `<div class="pdf-option-line"><strong>Tanks:</strong><span>☐ Attached</span><span>☐ Not Attached</span></div><div class="pdf-option-line"><strong>El. Panel:</strong><span>☐ Attached</span><span>☐ Not Attached</span></div><div class="pdf-option-line"><strong>Distance Comp-Panel (if not attached):</strong><span>__________ mm</span></div>`;
@@ -1116,17 +1177,18 @@ Electrical Panel
                 });
             }
 
-            if (vizCards.length > 0) {
-                vizCards.forEach((card, index) => {
+            if (vizCardsToRender.length > 0) {
+                vizCardsToRender.forEach((card, index) => {
                     const titleElement = card.querySelector('h2');
                     if (titleElement) {
                         originalTitles[index] = titleElement.textContent; // Store original title
-                        if (index === 0) titleElement.textContent = '☐ Option A';
-                        if (index === 1) titleElement.textContent = '☐ Option B';
-                        if (index === 2) titleElement.textContent = '☐ Option C';
+                        titleElement.textContent = `☐ Option ${String.fromCharCode(65 + index)}`;
                     }
                 });
             }
+
+            // Now that the cards are modified for the PDF, generate the canvas promises
+            const promises = vizCardsToRender.map(card => html2canvas(card));
 
             doc.setFontSize(18);
             doc.text('Machine Size Configurator Summary', margin, 20);
@@ -1182,24 +1244,25 @@ Electrical Panel
                 // --- Remove added checkboxes ---
                 addedCheckboxes.forEach(el => el.remove());
 
-                // --- Restore original titles ---
-                if (vizCards.length > 0) {
-                    vizCards.forEach((card, index) => {
+                // --- Restore original titles on the rendered cards ---
+                if (vizCardsToRender.length > 0) {
+                    vizCardsToRender.forEach((card, index) => {
                         const titleElement = card.querySelector('h2');
                         if (titleElement && originalTitles[index]) {
                             titleElement.textContent = originalTitles[index];
                         }
                     });
                 }
-
-                downloadPdfBtn.textContent = originalBtnText;
+                
+                generateSelectedPdfBtn.textContent = originalBtnText;
+                generateSelectedPdfBtn.disabled = false;
                 downloadPdfBtn.disabled = false;
             };
 
             const addImagesAndSave = (canvases) => {
                 // --- Disclaimer Logic ---
                 const disclaimerTitle = "Disclaimer";
-                const disclaimerText = "The measurements below are indicative and are intended to help in choosing the machine configuration. If the measurements are not satisfactory, please request a custom quotation.";
+                const disclaimerText = "The measurements below are indicative and are intended to help in choosing the machine configuration. If the measurements are not satisfactory, please request a custom quotation. Please note that if no option is selected below, we will choose the configuration that best suits our needs.";
                 const disclaimerTitleLines = doc.splitTextToSize(disclaimerTitle, contentWidth);
                 const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
                 const disclaimerHeight = (disclaimerTitleLines.length + disclaimerLines.length) * lineHeight;
@@ -1253,21 +1316,13 @@ Electrical Panel
                 doc.save('Machine_Configurator_Summary.pdf');
             };
 
-            const promiseB2B = html2canvas(multiVisualizationContainer.children[0]);
-            const promiseHeadAligned = html2canvas(multiVisualizationContainer.children[1]);
-
-            if (claddingValue === 'no') {
-                const promiseHeadPerp = html2canvas(multiVisualizationContainer.children[2]);
-                Promise.all([promiseB2B, promiseHeadAligned, promiseHeadPerp]).then(addImagesAndSave).catch(err => {
-                    console.error('Failed to generate PDF:', err);
-                    alert('An error occurred while generating the PDF.');
-                }).finally(cleanup);
-            } else {
-                Promise.all([promiseB2B, promiseHeadAligned]).then(addImagesAndSave).catch(err => {
-                    console.error('Failed to generate PDF:', err);
-                    alert('An error occurred while generating the PDF.');
-                }).finally(cleanup);
-            }
+            Promise.all(promises).then(addImagesAndSave).catch(err => {
+                console.error('Failed to generate PDF:', err);
+                alert('An error occurred while generating the PDF.');
+            }).finally(() => {
+                cleanup();
+                pdfOptionsModal.classList.add('hidden');
+            });
         }, 100); // 100ms delay
     });
 });
