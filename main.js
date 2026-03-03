@@ -1201,7 +1201,9 @@ Electrical Panel
                     const titleElement = card.querySelector('h2');
                     if (titleElement) {
                         originalTitles[index] = titleElement.textContent; // Store original title
-                        titleElement.textContent = `☐ Option ${String.fromCharCode(65 + index)}`;
+                        // Find the original index to create the correct letter (A, B, C)
+                        const originalCardIndex = Array.from(multiVisualizationContainer.children).indexOf(card);
+                        titleElement.textContent = `☐ Option ${String.fromCharCode(65 + originalCardIndex)}`;
                     }
                 });
             }

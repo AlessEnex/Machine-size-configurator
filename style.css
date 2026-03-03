@@ -585,9 +585,6 @@ select:focus {
     width: 100% !important;
 }
 
-.pdf-export-active .drawing-part:last-child {
-    flex-grow: 1;
-}
 /* --------------------------------------- */
 
 .pdf-checkbox-options {
