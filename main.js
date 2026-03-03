@@ -5,6 +5,8 @@ import dataQuadri from './electricalPanelData.js';
 document.addEventListener('DOMContentLoaded', () => {
 
     let currentMachineWidth = 1200; // Global variable for machine width
+    let machineHeight = 0; // Global variable for machine height
+    let tanksSectionWidth = 1200; // Global variable for tanks section width
     let isManualOverrideActive = false; // Flag to track if override is active
 
     // --- GENERAL CONFIG ---
@@ -14,11 +16,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const claddingRadios = document.querySelectorAll('input[name="cladding"]');
     const connectionsRadios = document.querySelectorAll('input[name="connections"]');
 
+    // --- MODAL (Config Options) ---
+    const showConfigOptionsBtn = document.getElementById('show-config-options-btn');
+    const closeConfigOptionsBtn = document.getElementById('close-config-options-btn');
+    const configOptionsModal = document.getElementById('config-options-modal');
+
     // --- TANKS SECTION ---
+    const tankTypeRadios = document.querySelectorAll('input[name="tank-type"]');
+    const singleTankGroup = document.getElementById('single-tank-group');
+    const coupledTanksGroup = document.getElementById('coupled-tanks-group');
     const liquidReceiverSelect = document.getElementById('liquid-receiver-volume');
+    const coupledLiquidReceiverSelect = document.getElementById('coupled-liquid-receiver-volume');
+    const mtSuctionAccumulatorSelect = document.getElementById('mt-suction-accumulator-volume');
+    const secondaryLineAccumulatorSelect = document.getElementById('secondary-line-accumulator');
     const airConditioningSelect = document.getElementById('air-conditioning');
-    const liquidSubcoolerSelect = document.getElementById('liquid-subcooler');
     const tanksLengthOutput = document.getElementById('tanks-length');
+    const tanksWidthOutput = document.getElementById('tanks-width');
+    const machineHeightOutput = document.getElementById('machine-height');
 
     function getGeneralConfig() {
         const configuration = document.querySelector('input[name="configuration"]:checked').value;
@@ -27,68 +41,141 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSumConfigState() {
-        const tanksDefined = liquidReceiverSelect.value !== '';
-        
-        const compressorsDefined = (parseInt(numMtSelect.value) > 0) ||
-                                   (parseInt(numAuxSelect.value) > 0) ||
-                                   (parseInt(numLtSelect.value) > 0) ||
-                                   (oilSeparatorSelect.value !== '') ||
-                                   (parseInt(heatRecoveriesSelect.value) > 0);
+        const receiverSelected = (liquidReceiverSelect.value !== '') || 
+                               (coupledLiquidReceiverSelect.value !== '');
+        const mtAccumulatorSelected = mtSuctionAccumulatorSelect.value !== '';
+        const tanksDefined = receiverSelected && mtAccumulatorSelected;
 
-        const panelDefined = panelModelSelect.value !== '';
+        const compressorsDefined = (parseInt(numMtSelect.value) > 0) || (parseInt(numAuxSelect.value) > 0) || (parseInt(numLtSelect.value) > 0) || (oilSeparatorSelect.value !== '') || (parseInt(heatRecoveriesSelect.value) > 0);
 
-        const allDefined = tanksDefined && compressorsDefined && panelDefined;
+        const panelDefined = b2bPanelModelSelect.value !== '' || headPanelModelSelect.value !== '';
+
+        const hasCladding = document.querySelector('input[name="cladding"]:checked').value !== 'no';
+
+        const isEnabled = tanksDefined && compressorsDefined && panelDefined && !hasCladding;
 
         // Disable all radio buttons in the group if conditions are not met
         sumConfigRadios.forEach(radio => {
-            radio.disabled = !allDefined;
+            radio.disabled = !isEnabled;
         });
-        
+
         if (sumConfigCard) {
-            sumConfigCard.style.opacity = allDefined ? '1' : '0.6';
-            sumConfigCard.title = allDefined ? '' : 'Please define Tanks, Compressors, and Electrical Panel sections first.';
+            sumConfigCard.style.opacity = isEnabled ? '1' : '0.6';
+            let title = '';
+            if (!tanksDefined || !compressorsDefined || !panelDefined) {
+                title = 'Please define Tanks, Compressors, and Electrical Panel sections first.';
+            } else if (hasCladding) {
+                title = 'Sum configuration is disabled when cladding is active.';
+            }
+            sumConfigCard.title = title;
         }
 
         // If the section becomes disabled, reset the selection to "None"
         // and update the visualization to remove any summed dimension lines.
-        if (!allDefined) {
+        if (!isEnabled) {
             const noneRadio = document.querySelector('input[name="sum-config"][value="none"]');
-            if (noneRadio) {
+            if (noneRadio && !noneRadio.checked) {
                 noneRadio.checked = true;
-                updateVisualization();
+                // A change event will be fired by the browser, which in turn calls updateVisualization()
             }
         }
     }
 
     // Function to calculate and update the tanks section length
     function calculateTanksLength() {
-        const selectedVolume = liquidReceiverSelect.value;
+        const tankType = document.querySelector('input[name="tank-type"]:checked').value;
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
+        let baseLength = 0;
+        let baseHeight = 0;
+ 
+        // Reset height at the start of calculation
+        machineHeight = 0;
 
-        // Base length based on liquid receiver volume
-        const tankBaseLengths = {
-            "300L": 1500,
-            "460L": 1600,
-            "700L": 1900,
-            "1000L": 2300,
-            "2x570L": 2500
+        if (tankType === 'single') {
+            const selectedVolume = liquidReceiverSelect.value;
+            // Set tanks section width based on selection
+            if (selectedVolume === '150L/185L') {
+                tanksSectionWidth = 1000;
+            } else if (selectedVolume === '300L' || selectedVolume === '350L') {
+                tanksSectionWidth = 1100;
+            } else {
+                tanksSectionWidth = 1200;
+            }
+            // Base length based on liquid receiver volume
+            const tankBaseLengths = {
+                "150L/185L": 600,
+                "300L": 800,
+                "350L": 800,
+                "460L": 800,
+                "700L": 1000,
+                "1000L": 1100
+            };
+            baseLength = tankBaseLengths[selectedVolume] || 0;
+
+            const singleTankHeights = {
+                "150L/185L": 2000,
+                "300L": 2000,
+                "350L": 2300,
+                "460L": 2000,
+                "700L": 2000,
+                "1000L": 2500
+            };
+            baseHeight = singleTankHeights[selectedVolume] || 0;
+        } else { // 'coupled'
+            tanksSectionWidth = 1200;
+            const selectedCoupledVolume = coupledLiquidReceiverSelect.value;
+            const coupledTankBaseLengths = {
+                "350+310L": 1400,
+                "350+350L": 1550,
+                "570+350L": 1550,
+                "570+570L": 1600
+            };
+            baseLength = coupledTankBaseLengths[selectedCoupledVolume] || 0;
+
+            const coupledTankHeights = {
+                "350+310L": 2300,
+                "350+350L": 2300,
+                "570+350L": 2500,
+                "570+570L": 2500
+            };
+            baseHeight = coupledTankHeights[selectedCoupledVolume] || 0;
+        }
+
+        // Apply cladding logic to height
+        if (claddingValue === 'yes' || claddingValue === 'yes_walk_in') {
+            // If cladding is present, add 300mm to baseHeight, but cap at 2500mm.
+            // If baseHeight is 0 (no tank selected), it becomes 300mm (or 2500mm if that's the cap).
+            machineHeight = Math.min(baseHeight + 300, 2500);
+        } else {
+            // No cladding, so machineHeight is just the baseHeight from the tank.
+            machineHeight = baseHeight;
+        }
+
+        // Get value from MT Suction Accumulator
+        const mtAccumulatorVolume = mtSuctionAccumulatorSelect.value;
+        const mtAccumulatorLengths = {
+            "122L": 900,
+            "200L": 900,
+            "275L": 1100
         };
+        const mtAccumulatorLength = mtAccumulatorLengths[mtAccumulatorVolume] || 0;
 
-        let baseLength = tankBaseLengths[selectedVolume] || 0;
+        // Get value from Secondary Line Accumulator
+        const hasSecondaryAccumulator = secondaryLineAccumulatorSelect.value === 'yes';
+        const secondaryAccumulatorLength = hasSecondaryAccumulator ? 500 : 0;
 
         // Get the value from the Air Conditioning dropdown
         const hasAirConditioning = airConditioningSelect.value === 'yes';
         // Get the value from the Liquid Subcooler dropdown
-        const hasLiquidSubcooler = liquidSubcoolerSelect.value === 'yes';
         const { configuration, connections } = getGeneralConfig();
 
         // Add 1000mm if Air Conditioning is selected
         let finalLength = baseLength;
+        finalLength += mtAccumulatorLength;
+        finalLength += secondaryAccumulatorLength;
+
         if (hasAirConditioning) {
-            finalLength += 1000;
-        }
-        // Add 300mm if Liquid Subcooler is selected
-        if (hasLiquidSubcooler) {
-            finalLength += 300;
+            finalLength += 800;
         }
 
         // Add 100mm if configuration is "Two Parts"
@@ -103,14 +190,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update the output display
         tanksLengthOutput.textContent = `${finalLength} mm`;
+        tanksWidthOutput.textContent = finalLength > 0 ? `${tanksSectionWidth} mm` : '0 mm';
+        machineHeightOutput.textContent = `${machineHeight} mm`;
         updateVisualization();
         updateSumConfigState();
     }
 
+    function handleTankTypeChange() {
+        const selectedType = document.querySelector('input[name="tank-type"]:checked').value;
+
+        if (selectedType === 'single') {
+            singleTankGroup.classList.remove('hidden');
+            coupledTanksGroup.classList.add('hidden');
+            // Reset coupled tank selection to avoid using its value in calculations
+            coupledLiquidReceiverSelect.value = '';
+        } else { // 'coupled'
+            singleTankGroup.classList.add('hidden');
+            coupledTanksGroup.classList.remove('hidden');
+            // Reset single tank selection to avoid using its value in calculations
+            liquidReceiverSelect.value = '';
+        }
+
+        // Recalculate length after switching
+        calculateTanksLength();
+    }
+
     // Add event listeners for the tanks section
+    tankTypeRadios.forEach(radio => radio.addEventListener('change', handleTankTypeChange));
     liquidReceiverSelect.addEventListener('change', calculateTanksLength);
+    coupledLiquidReceiverSelect.addEventListener('change', calculateTanksLength);
+    mtSuctionAccumulatorSelect.addEventListener('change', calculateTanksLength);
+    secondaryLineAccumulatorSelect.addEventListener('change', calculateTanksLength);
     airConditioningSelect.addEventListener('change', calculateTanksLength);
-    liquidSubcoolerSelect.addEventListener('change', calculateTanksLength);
 
     // --- COMPRESSORS SECTION ---
     // New compressor elements
@@ -126,11 +237,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const lowerDeckLengthOutput = document.getElementById('lower-deck-length');
     const upperDeckLengthOutput = document.getElementById('upper-deck-length');
     const compressorsLengthOutput = document.getElementById('compressors-length');
-    const visualizationContainer = document.getElementById('visualization-container');
+    const compressorsWidthOutput = document.getElementById('compressors-width');
+
+    // --- VISUALIZATION CONTAINERS ---
+    const singleVisualizationContainer = document.getElementById('single-visualization-container');
+    const multiVisualizationContainer = document.getElementById('multi-visualization-container');
+
+    // --- SINGLE VISUALIZATION ELEMENTS ---
     const visualizationWrapper = document.getElementById('visualization-wrapper');
     const partsContainer = document.getElementById('parts-container');
     const dimensionsContainer = document.getElementById('dimensions-container');
+    const overallDimensionsDisplay = document.getElementById('overall-dimensions-display');
+    const overallLengthOutput = document.getElementById('overall-length-output');
+    const overallWidthOutput = document.getElementById('overall-width-output');
+    const overallHeightOutput = document.getElementById('overall-height-output');
 
+    // --- DUAL VISUALIZATION ELEMENTS (B2B) ---
+    const visualizationWrapperB2B = document.getElementById('visualization-wrapper-b2b');
+    const partsContainerB2B = document.getElementById('parts-container-b2b');
+    const dimensionsContainerB2B = document.getElementById('dimensions-container-b2b');
+    const overallDimensionsDisplayB2B = document.getElementById('overall-dimensions-display-b2b');
+    const overallLengthOutputB2B = document.getElementById('overall-length-output-b2b');
+    const overallWidthOutputB2B = document.getElementById('overall-width-output-b2b');
+    const overallHeightOutputB2B = document.getElementById('overall-height-output-b2b');
+    const overallLengthLabelB2B = document.getElementById('overall-length-label-b2b');
+    const overallWidthLabelB2B = document.getElementById('overall-width-label-b2b');
+    const overallHeightLabelB2B = document.getElementById('overall-height-label-b2b');
+
+    // --- DUAL VISUALIZATION ELEMENTS (HEAD) ---
+    const visualizationWrapperHeadAligned = document.getElementById('visualization-wrapper-head-aligned');
+    const partsContainerHeadAligned = document.getElementById('parts-container-head-aligned');
+    const dimensionsContainerHeadAligned = document.getElementById('dimensions-container-head-aligned');
+    const overallDimensionsDisplayHeadAligned = document.getElementById('overall-dimensions-display-head-aligned');
+    const overallLengthOutputHeadAligned = document.getElementById('overall-length-output-head-aligned');
+    const overallWidthOutputHeadAligned = document.getElementById('overall-width-output-head-aligned');
+    const overallHeightOutputHeadAligned = document.getElementById('overall-height-output-head-aligned');
+    const overallLengthLabelHeadAligned = document.getElementById('overall-length-label-head-aligned');
+    const overallWidthLabelHeadAligned = document.getElementById('overall-width-label-head-aligned');
+    const overallHeightLabelHeadAligned = document.getElementById('overall-height-label-head-aligned');
+
+    // --- NEW VISUALIZATION ELEMENTS (HEAD - PERP) ---
+    const visualizationWrapperHeadPerp = document.getElementById('visualization-wrapper-head-perp');
+    const partsContainerHeadPerp = document.getElementById('parts-container-head-perp');
+    const dimensionsContainerHeadPerp = document.getElementById('dimensions-container-head-perp');
+    const overallDimensionsDisplayHeadPerp = document.getElementById('overall-dimensions-display-head-perp');
+    const overallLengthOutputHeadPerp = document.getElementById('overall-length-output-head-perp');
+    const overallWidthOutputHeadPerp = document.getElementById('overall-width-output-head-perp');
+    const overallHeightOutputHeadPerp = document.getElementById('overall-height-output-head-perp');
+    const overallLengthLabelHeadPerp = document.getElementById('overall-length-label-head-perp');
+    const overallWidthLabelHeadPerp = document.getElementById('overall-width-label-head-perp');
+    const overallHeightLabelHeadPerp = document.getElementById('overall-height-label-head-perp');
+    
     function handleCompressorNumberChange(numSelect, typeGroup) {
         const num = parseInt(numSelect.value);
         typeGroup.classList.toggle('hidden', num === 0);
@@ -146,6 +303,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const typeAux = numAux > 0 ? document.querySelector('input[name="type-aux"]:checked').value : '4cyl';
         const numLt = parseInt(numLtSelect.value) || 0;
         const typeLt = numLt > 0 ? document.querySelector('input[name="type-lt"]:checked').value : '4cyl';
+
+        // --- LOGIC FOR COMPRESSOR SECTION WIDTH ---
+        // This logic runs unless a manual override is active.
+        if (!isManualOverrideActive) {
+            const has6Cyl = (numMt > 0 && typeMt === '6cyl') ||
+                            (numAux > 0 && typeAux === '6cyl') ||
+                            (numLt > 0 && typeLt === '6cyl');
+
+            if (has6Cyl) {
+                currentMachineWidth = 1200; // Presence of any 6-cyl compressor
+            } else if (numLt > 0) { // No 6-cyl, LT compressors determine the width
+                if (typeLt === '2cyl') {
+                    currentMachineWidth = 1000;
+                } else if (typeLt === '4cyl') {
+                    currentMachineWidth = 1100;
+                }
+            } else { // No 6-cyl and no LT compressors, use default width
+                currentMachineWidth = 1000;
+            }
+        }
 
         const numHeatRecoveries = parseInt(heatRecoveriesSelect.value) || 0;
 
@@ -174,6 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let oilSeparatorLength = 0;
         const selectedOilSeparator = oilSeparatorSelect.value;
         const oilSeparatorLengths = {
+            "BOS4-CDH-1AFO": 400,
             "BOS4-CDH-1BFO": 600,
             "BOS4-CDH-1NFO": 600,
             "BOS4-CDH-1CFO": 1000,
@@ -201,6 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const oilReserveLength = 600;
         upperDeckLength += oilReserveLength;
 
+        // Also add oil separator length to the upper deck
+        upperDeckLength += oilSeparatorLength;
+
         // Update the output displays
         lowerDeckLengthOutput.textContent = `${lowerDeckLength} mm`;
         upperDeckLengthOutput.textContent = `${upperDeckLength} mm`;
@@ -216,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         compressorsLengthOutput.textContent = `${finalLength} mm`;
-
+        compressorsWidthOutput.textContent = finalLength > 0 ? `${currentMachineWidth} mm` : '0 mm';
         updateVisualization();
         updateSumConfigState();
     }
@@ -232,163 +413,304 @@ document.addEventListener('DOMContentLoaded', () => {
     heatRecoveriesSelect.addEventListener('change', calculateCompressorsLength);
 
     // --- ELECTRICAL PANEL SECTION ---
-    const panelModelSelect = document.getElementById('electrical-panel-model');
+    const b2bPanelGroup = document.getElementById('b2b-panel-group');
+    const headPanelGroup = document.getElementById('head-panel-group');
+    const b2bPanelModelSelect = document.getElementById('b2b-panel-model');
+    const headPanelModelSelect = document.getElementById('head-panel-model');
     const orientationGroup = document.getElementById('orientation-group');
     const orientationSelect = document.getElementById('electrical-panel-orientation');
-    const electricalPanelLengthOutput = document.getElementById('electrical-panel-length');
 
-    function getElectricalPanelDimensions() {
-        const selectedIndex = panelModelSelect.value;
-        const orientation = orientationSelect.value;
-
-        let panelLength = 0;
-        let panelWidth = 0;
+    function getPanelDimensions(panelType, orientationOverride = null) {
+        const isB2B = panelType === 'b2b';
+        const selectedIndex = isB2B ? b2bPanelModelSelect.value : headPanelModelSelect.value;
+        const orientation = orientationOverride || orientationSelect.value;
 
         if (selectedIndex === "") {
             return { length: 0, width: 0 };
         }
 
         const panelData = dataQuadri[selectedIndex];
+        if (!panelData) return { length: 0, width: 0 };
 
-        if (panelData) {
-            // The orientation option is only available for 'T' type panels
-            if (panelData.typ === 'T' && orientation === 'perpendicular') {
-                // Rotated
-                panelLength = panelData.W; // W becomes length
-                panelWidth = panelData.L;  // L becomes width
-            } else {
-                // Aligned or B2B
-                panelLength = panelData.L;
-                panelWidth = panelData.W;
-            }
+        // The orientation option is only available for 'T' type panels (which are 'head' panels)
+        if (!isB2B && panelData.typ === 'T' && orientation === 'perpendicular') {
+            // Rotated
+            return { length: panelData.W, width: panelData.L };
+        } else {
+            // Aligned or B2B
+            return { length: panelData.L, width: panelData.W };
         }
-
-        return { length: panelLength, width: panelWidth };
     }
 
-    function calculateElectricalPanelLength() {
-        const { length: panelLength } = getElectricalPanelDimensions();
-        electricalPanelLengthOutput.textContent = `${panelLength} mm`;
+    function calculatePanelLengths() {
         updateVisualization();
         updateSumConfigState();
     }
 
     // --- VISUALIZATION ---
-    function updateVisualization() {
+    function drawMachineVisualization(elements, panelType, orientationOverride = null) {
+        const {
+            wrapper, partsContainer, dimensionsContainer,
+            overallDimensionsDisplay, overallLengthOutput, overallWidthOutput, overallHeightOutput,
+            overallLengthLabel, overallWidthLabel, overallHeightLabel
+        } = elements;
+
         const tanksLength = parseInt(tanksLengthOutput.textContent) || 0;
         const compressorsLength = parseInt(compressorsLengthOutput.textContent) || 0;
-        const { length: electricalPanelLength, width: electricalPanelWidth } = getElectricalPanelDimensions();
+        const { length: electricalPanelLength, width: electricalPanelWidth } = getPanelDimensions(panelType, orientationOverride);
 
+        // --- Cladding Logic ---
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
+        const hasCladding = claddingValue !== 'no';
+        const isWalkIn = claddingValue === 'yes_walk_in';
+        const claddingThickness = 50; // mm
+    
+        const finalSharedWidth = Math.max(tanksSectionWidth, currentMachineWidth);
         const totalLength = tanksLength + compressorsLength + electricalPanelLength;
-
-        // Clear previous drawing
+    
+        // --- Special Alignment Logic Check ---
+        const currentOrientation = orientationOverride || orientationSelect.value;
+        const isHeadPanelAligned = panelType === 'head' && currentOrientation === 'aligned';
+        const alignPanelTop = isHeadPanelAligned;
+    
         partsContainer.innerHTML = '';
         dimensionsContainer.innerHTML = '';
-
+    
+        wrapper.style.padding = '0';
+        wrapper.style.backgroundColor = '';
+        wrapper.style.border = '';
+        overallDimensionsDisplay.classList.add('hidden');
+    
         if (totalLength === 0) {
-            visualizationContainer.style.display = 'none';
-            // Reset height to default min-height from CSS
-            visualizationWrapper.style.height = '';
+            wrapper.style.height = '';
             return;
         }
-
-        // Show the container if there's something to draw
-        visualizationContainer.style.display = 'block';
-
-        const canvasWidth = visualizationWrapper.clientWidth;
-
-        // New logic for gaps
+    
+        const canvasWidth = wrapper.getBoundingClientRect().width;
+    
         const configuration = document.querySelector('input[name="configuration"]:checked').value;
         const sumConfig = document.querySelector('input[name="sum-config"]:checked').value;
-        const gapSize = 20; // pixels
-
-        // Define the parts to be drawn
+        const gapSize = 20;
+    
         const parts = [];
-        if (tanksLength > 0) parts.push({ name: 'Tanks', length: tanksLength, color: 'blue-bg', width: currentMachineWidth });
-        if (compressorsLength > 0) parts.push({ name: 'Compressors', length: compressorsLength, color: 'purple-bg', width: currentMachineWidth });
+        if (tanksLength > 0) parts.push({ name: 'Tanks', length: tanksLength, color: 'blue-bg', width: finalSharedWidth });
+        if (compressorsLength > 0) parts.push({ name: 'Compressors', length: compressorsLength, color: 'purple-bg', width: finalSharedWidth });
         if (electricalPanelLength > 0) parts.push({ name: 'Electrical Panel', length: electricalPanelLength, color: 'orange-bg', width: electricalPanelWidth });
-
-        // Determine where gaps are needed
+    
         let totalGapWidth = 0;
-        const gaps = []; // boolean array, true if gap before this part
+        const gaps = [];
         if (parts.length > 1) {
             for (let i = 1; i < parts.length; i++) {
                 const prevPart = parts[i - 1];
                 const currentPart = parts[i];
-                let needsGap;
-
-                if (configuration === 'one_part') {
-                    // In "One Part" configuration, all blocks are always attached.
-                    needsGap = false;
-                } else {
-                    // In "Two Parts", gaps are present by default but can be removed by sum config.
-                    needsGap = true; 
-                    if (sumConfig === 'tanks_compressors' && prevPart.name === 'Tanks' && currentPart.name === 'Compressors') {
-                        needsGap = false;
-                    } else if (sumConfig === 'compressors_panel' && prevPart.name === 'Compressors' && currentPart.name === 'Electrical Panel') {
-                        needsGap = false;
-                    } else if (sumConfig === 'all') {
-                        needsGap = false;
-                    }
+                // Gaps are only for 'two_parts' config, which is disabled with cladding.
+                // This check ensures no gaps appear if cladding is active.
+                let needsGap = (configuration === 'two_parts' && !hasCladding);
+                if (needsGap) {
+                    if (sumConfig === 'tanks_compressors' && prevPart.name === 'Tanks' && currentPart.name === 'Compressors') needsGap = false;
+                    else if (sumConfig === 'compressors_panel' && prevPart.name === 'Compressors' && currentPart.name === 'Electrical Panel') needsGap = false;
+                    else if (sumConfig === 'all') needsGap = false;
                 }
                 gaps[i] = needsGap;
-                if (needsGap) {
-                    totalGapWidth += gapSize;
-                }
+                if (needsGap) totalGapWidth += gapSize;
             }
         }
-
+    
         const availableWidthForParts = canvasWidth - totalGapWidth;
 
-        // Determine the maximum width of the entire assembly for correct scaling
-        const maxWidth = Math.max(currentMachineWidth, electricalPanelWidth);
+        let extraRightPadding = 0;
+        if (claddingValue === 'no' && panelType === 'head' && currentOrientation === 'perpendicular') {
+            extraRightPadding = 0; // Add virtual space for the label
+        }
 
-        // Calculate the scale factor (pixels per mm) based on the total length and available width
-        const scale = availableWidthForParts > 0 ? availableWidthForParts / totalLength : 0;
-
-        // Calculate the scaled height to maintain the aspect ratio based on the maxWidth
-        const canvasHeight = maxWidth * scale;
-        partsContainer.style.height = `${canvasHeight}px`;
-
-        // Function to create a part of the drawing
+        const walkInSpace = isWalkIn ? 1000 : 0;
+        const maxWidth = Math.max(...parts.map(p => p.width));
+    
+        const effectiveTotalLength = totalLength + (hasCladding ? claddingThickness * 2 : 0) + extraRightPadding;
+        const effectiveMaxWidth = maxWidth + (hasCladding ? claddingThickness * 2 : 0) + walkInSpace;
+    
+        const scale = availableWidthForParts > 0 ? availableWidthForParts / effectiveTotalLength : 0;
+    
+        const machinePixelHeight = maxWidth * scale;
+        const borderPx = hasCladding ? claddingThickness * scale : 0;
+        const walkInPixelHeight = walkInSpace * scale;
+    
+        const wrapperHeight = machinePixelHeight + (borderPx * 2) + walkInPixelHeight;
+        wrapper.style.height = `${wrapperHeight}px`;
+        partsContainer.style.height = `${machinePixelHeight}px`;
+        partsContainer.style.width = `${totalLength * scale + totalGapWidth}px`;
+    
+        if (hasCladding) {
+            wrapper.style.border = `${borderPx}px solid var(--grey-color)`;
+        }
+    
         const createDrawingPart = (name, length, colorClass, widthOverride) => {
             const partWidth = length * scale;
-            const displayWidth = widthOverride || currentMachineWidth;
-
             const part = document.createElement('div');
             part.className = `drawing-part ${colorClass}`;
             part.style.width = `${partWidth}px`;
-
-            // Scale the height of this part relative to the maxWidth of the assembly.
-            part.style.height = `${(displayWidth / maxWidth) * 100}%`;
-
-            // The part name is direct text content, it will be bold from .drawing-part style
+            part.style.height = `${(widthOverride / maxWidth) * 100}%`;
             part.appendChild(document.createTextNode(name));
-
             const dimDiv = document.createElement('div');
             dimDiv.className = 'part-dimensions';
-            
-            // Using innerHTML to include a line break
-            dimDiv.innerHTML = `L: ${length} mm <br> W: ${displayWidth} mm`;
-
+            dimDiv.innerHTML = `L: ${length} mm <br> W: ${widthOverride} mm`;
             part.appendChild(dimDiv);
-
             return part;
         };
-
-        // Draw all parts
+    
         parts.forEach((part, i) => {
             const partDiv = createDrawingPart(part.name, part.length, part.color, part.width);
+
+            if (part.name === 'Electrical Panel') {
+                const createOpeningLabel = (positionClass) => {
+                    const label = document.createElement('span');
+                    label.className = `opening-label ${positionClass}`;
+                    label.textContent = 'opening';
+                    return label;
+                };
+
+                if (panelType === 'b2b') {
+                    partDiv.appendChild(createOpeningLabel('top'));
+                    partDiv.appendChild(createOpeningLabel('bottom'));
+                } else { // panelType === 'head'
+                    const orientation = orientationOverride || orientationSelect.value;
+                    if (orientation === 'aligned') {
+                        partDiv.appendChild(createOpeningLabel('bottom'));
+                    } else { // perpendicular
+                        partDiv.appendChild(createOpeningLabel('right'));
+                    }
+                }
+            }
+
+            if (part.name === 'Electrical Panel' && alignPanelTop) {
+                partDiv.style.alignSelf = 'flex-start';
+            }
             if (gaps[i]) {
                 partDiv.style.marginLeft = `${gapSize}px`;
             }
+
             partsContainer.appendChild(partDiv);
         });
+    
+        drawSumDimensions(dimensionsContainer, parts, scale, gaps, gapSize);
+    
+        // Update labels based on cladding. This applies to the multi-visualization containers.
+        if (overallLengthLabel && overallWidthLabel && overallHeightLabel) {
+            if (hasCladding) {
+                overallLengthLabel.textContent = 'Overall Length (with Cladding):';
+                overallWidthLabel.textContent = 'Overall Width (with Cladding):';
+                overallHeightLabel.textContent = 'Overall Height (with Cladding):';
+            } else {
+                // Reset to default when cladding is removed
+                overallLengthLabel.textContent = 'Overall Length:';
+                overallWidthLabel.textContent = 'Overall Width:';
+                overallHeightLabel.textContent = 'Overall Height:';
+            }
+        }
 
-        drawSumDimensions(parts, scale, gaps, gapSize);
+        overallLengthOutput.textContent = `${effectiveTotalLength} mm`;
+        overallWidthOutput.textContent = `${effectiveMaxWidth} mm`;
+        overallHeightOutput.textContent = `${machineHeight} mm`;
+        overallDimensionsDisplay.classList.remove('hidden');
     }
 
-    function drawSumDimensions(parts, scale, gaps, gapSize) {
+    function updateVisualization() {
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
+
+        if (claddingValue === 'no') {
+            // For "No" cladding, show THREE visualizations
+            singleVisualizationContainer.classList.add('hidden');
+            multiVisualizationContainer.classList.add('compact-view');
+            multiVisualizationContainer.classList.remove('hidden');
+            // Make sure all 3 are visible
+            multiVisualizationContainer.children[0].classList.remove('hidden');
+            multiVisualizationContainer.children[1].classList.remove('hidden');
+            multiVisualizationContainer.children[2].classList.remove('hidden');
+
+            // Draw B2B version
+            const elementsB2B = {
+                wrapper: visualizationWrapperB2B,
+                partsContainer: partsContainerB2B,
+                dimensionsContainer: dimensionsContainerB2B,
+                overallDimensionsDisplay: overallDimensionsDisplayB2B,
+                overallLengthOutput: overallLengthOutputB2B,
+                overallWidthOutput: overallWidthOutputB2B,
+                overallHeightOutput: overallHeightOutputB2B,
+                overallLengthLabel: overallLengthLabelB2B,
+                overallWidthLabel: overallWidthLabelB2B,
+                overallHeightLabel: overallHeightLabelB2B
+            };
+            drawMachineVisualization(elementsB2B, 'b2b');
+
+            // Draw Head ALIGNED version
+            const elementsHeadAligned = {
+                wrapper: visualizationWrapperHeadAligned,
+                partsContainer: partsContainerHeadAligned,
+                dimensionsContainer: dimensionsContainerHeadAligned,
+                overallDimensionsDisplay: overallDimensionsDisplayHeadAligned,
+                overallLengthOutput: overallLengthOutputHeadAligned,
+                overallWidthOutput: overallWidthOutputHeadAligned,
+                overallHeightOutput: overallHeightOutputHeadAligned,
+                overallLengthLabel: overallLengthLabelHeadAligned,
+                overallWidthLabel: overallWidthLabelHeadAligned,
+                overallHeightLabel: overallHeightLabelHeadAligned
+            };
+            drawMachineVisualization(elementsHeadAligned, 'head', 'aligned');
+
+            // Draw Head PERPENDICULAR version
+            const elementsHeadPerp = {
+                wrapper: visualizationWrapperHeadPerp,
+                partsContainer: partsContainerHeadPerp,
+                dimensionsContainer: dimensionsContainerHeadPerp,
+                overallDimensionsDisplay: overallDimensionsDisplayHeadPerp,
+                overallLengthOutput: overallLengthOutputHeadPerp,
+                overallWidthOutput: overallWidthOutputHeadPerp,
+                overallHeightOutput: overallHeightOutputHeadPerp,
+                overallLengthLabel: overallLengthLabelHeadPerp,
+                overallWidthLabel: overallWidthLabelHeadPerp,
+                overallHeightLabel: overallHeightLabelHeadPerp
+            };
+            drawMachineVisualization(elementsHeadPerp, 'head', 'perpendicular');
+
+        } else {
+            // For "Yes" or "Yes + Walk-in", show TWO visualizations
+            singleVisualizationContainer.classList.add('hidden');
+            multiVisualizationContainer.classList.remove('compact-view');
+            multiVisualizationContainer.classList.remove('hidden');
+            // Show first two, hide the third
+            multiVisualizationContainer.children[0].classList.remove('hidden');
+            multiVisualizationContainer.children[1].classList.remove('hidden');
+            multiVisualizationContainer.children[2].classList.add('hidden');
+
+            // Draw B2B version
+            const elementsB2B = {
+                wrapper: visualizationWrapperB2B,
+                partsContainer: partsContainerB2B,
+                dimensionsContainer: dimensionsContainerB2B,
+                overallDimensionsDisplay: overallDimensionsDisplayB2B,
+                overallLengthOutput: overallLengthOutputB2B,
+                overallWidthOutput: overallWidthOutputB2B,
+                overallHeightOutput: overallHeightOutputB2B,
+                overallLengthLabel: overallLengthLabelB2B,
+                overallWidthLabel: overallWidthLabelB2B,
+                overallHeightLabel: overallHeightLabelB2B
+            };
+            drawMachineVisualization(elementsB2B, 'b2b');
+
+            // Draw Head version (respecting the disabled 'aligned' state)
+            // The target for this is the "head-aligned" container
+            const elementsHead = {
+                wrapper: visualizationWrapperHeadAligned, partsContainer: partsContainerHeadAligned, dimensionsContainer: dimensionsContainerHeadAligned,
+                overallDimensionsDisplay: overallDimensionsDisplayHeadAligned, overallLengthOutput: overallLengthOutputHeadAligned, overallWidthOutput: overallWidthOutputHeadAligned, overallHeightOutput: overallHeightOutputHeadAligned,
+                overallLengthLabel: overallLengthLabelHeadAligned,
+                overallWidthLabel: overallWidthLabelHeadAligned,
+                overallHeightLabel: overallHeightLabelHeadAligned
+            };
+            drawMachineVisualization(elementsHead, 'head'); // No override, uses select value which is forced to 'aligned'
+        }
+    }
+
+    function drawSumDimensions(container, parts, scale, gaps, gapSize) {
         const sumConfig = document.querySelector('input[name="sum-config"]:checked').value;
         if (sumConfig === 'none') return;
 
@@ -426,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dimText.textContent = `${groupLengthMm} mm`;
 
                 dimLine.appendChild(dimText);
-                dimensionsContainer.appendChild(dimLine);
+                container.appendChild(dimLine);
             }
         };
 
@@ -435,65 +757,81 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sumConfig === 'all') createDimLine(parts.map(p => p.name));
     }
 
-    function populatePanelSelector() {
-        const configuration = document.querySelector('input[name="configuration"]:checked').value;
-        const previouslySelectedValue = panelModelSelect.value;
+    function populatePanelSelectors() {
+        const prevB2B = b2bPanelModelSelect.value;
+        const prevHead = headPanelModelSelect.value;
 
-        // Clear existing options but keep the placeholder
-        panelModelSelect.innerHTML = '<option value="" selected>Select a panel...</option>';
+        b2bPanelModelSelect.innerHTML = '<option value="" selected>Select a B2B panel...</option>';
+        headPanelModelSelect.innerHTML = '<option value="" selected>Select a Head panel...</option>';
 
         dataQuadri.forEach((panel, index) => {
-            // If 'one_part' is selected, only show 'B2B' panels.
-            if (configuration === 'one_part' && panel.typ !== 'B2B') {
-                return; // Skip this panel
-            }
-
             const option = document.createElement('option');
             option.value = index;
-            option.textContent = `${panel.typ === 'T' ? 'Head' : 'B2B'}: ${panel.L}x${panel.H}x${panel.W}`;
-            panelModelSelect.appendChild(option);
+            option.textContent = `${panel.L}x${panel.H}x${panel.W}`;
+            
+            if (panel.typ === 'B2B') {
+                b2bPanelModelSelect.appendChild(option);
+            } else if (panel.typ === 'T') {
+                headPanelModelSelect.appendChild(option);
+            }
         });
 
-        // Try to restore the previous selection.
-        panelModelSelect.value = previouslySelectedValue;
+        b2bPanelModelSelect.value = prevB2B;
+        headPanelModelSelect.value = prevHead;
 
-        // If the value changed (because the previous option was removed), trigger an update.
-        if (panelModelSelect.value !== previouslySelectedValue) {
-            handlePanelTypeChange();
+        if (b2bPanelModelSelect.value !== prevB2B || headPanelModelSelect.value !== prevHead) {
+            updateVisualization();
         }
     }
 
-    function handlePanelTypeChange() {
-        const selectedIndex = panelModelSelect.value;
-        let isHeadPanel = false;
-        if (selectedIndex !== "") {
-            const panelData = dataQuadri[selectedIndex];
-            isHeadPanel = panelData.typ === 'T';
-        }
+    function updatePanelOrientationState() {
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
 
-        // The 'hidden' class has display: none, so this toggles visibility.
-        orientationGroup.classList.toggle('hidden', !isHeadPanel);
-        calculateElectricalPanelLength();
+        const selectedIndex = headPanelModelSelect.value;
+        const isHeadPanelSelected = selectedIndex !== "";
+
+        // Hide orientation select if no cladding (as all options are shown) or if no head panel is selected
+        orientationGroup.classList.toggle('hidden', claddingValue === 'no' || !isHeadPanelSelected);
+
+        if (isHeadPanelSelected) {
+            if (claddingValue === 'yes' || claddingValue === 'yes_walk_in') {
+                // If 'Yes' or 'Yes + Walk-in' cladding is selected, force 'Aligned' orientation and disable the select.
+                orientationSelect.disabled = true;
+                orientationSelect.value = 'aligned';
+            } else {
+                orientationSelect.disabled = false; // Re-enable it, even though it's hidden, for consistency
+            }
+        }
     }
 
-    panelModelSelect.addEventListener('change', handlePanelTypeChange);
-    orientationSelect.addEventListener('change', calculateElectricalPanelLength);
+    function handlePanelChange() {
+        updatePanelOrientationState();
+        updateVisualization();
+        updateSumConfigState();
+    }
+
+    b2bPanelModelSelect.addEventListener('change', handlePanelChange);
+    headPanelModelSelect.addEventListener('change', handlePanelChange);
+    orientationSelect.addEventListener('change', handlePanelChange);
 
     function handleConfigurationChange() {
         calculateTanksLength();
         calculateCompressorsLength();
-        populatePanelSelector();
     }
 
     function handleCladdingChange() {
         const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
         const onePartRadio = document.querySelector('input[name="configuration"][value="one_part"]');
         const twoPartsRadio = document.querySelector('input[name="configuration"][value="two_parts"]');
+        
+        const hasCladding = claddingValue !== 'no';
 
-        if (claddingValue === 'yes') {
+        if (hasCladding) {
             // If cladding is present, force "One Part" and disable the "Two Parts" option.
             twoPartsRadio.disabled = true;
-            if (twoPartsRadio.checked) {
+            showConfigOptionsBtn.disabled = true;
+            // If not already one part, switch to it
+            if (!onePartRadio.checked) {
                 onePartRadio.checked = true;
                 // Manually trigger the change event to ensure all related logic runs
                 onePartRadio.dispatchEvent(new Event('change', { bubbles: true }));
@@ -501,7 +839,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // If cladding is not present, re-enable the "Two Parts" option.
             twoPartsRadio.disabled = false;
+            showConfigOptionsBtn.disabled = false;
+            // Default to "Two Parts" if not already selected
+            if (!twoPartsRadio.checked) {
+                twoPartsRadio.checked = true;
+                twoPartsRadio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
+
+        // Check if this change affects panel orientation
+        updatePanelOrientationState();
+        updateSumConfigState();
+    calculateTanksLength(); // Recalculates tanks length/height and calls updateVisualization
     }
 
     // --- GENERAL CONFIG LISTENERS ---
@@ -521,10 +870,24 @@ document.addEventListener('DOMContentLoaded', () => {
     handleCompressorNumberChange(numAuxSelect, typeAuxGroup);
     handleCompressorNumberChange(numLtSelect, typeLtGroup);
     // ---
-    populatePanelSelector();
-    calculateElectricalPanelLength();
-    handlePanelTypeChange(); // Set initial visibility for panel orientation
+    populatePanelSelectors();
+    handlePanelChange();
     handleCladdingChange(); // Set initial state for cladding-dependent options
+
+    // --- MODAL LOGIC (Config Options) ---
+    showConfigOptionsBtn.addEventListener('click', () => {
+        configOptionsModal.classList.remove('hidden');
+    });
+
+    closeConfigOptionsBtn.addEventListener('click', () => {
+        configOptionsModal.classList.add('hidden');
+    });
+
+    configOptionsModal.addEventListener('click', (event) => {
+        if (event.target === configOptionsModal) {
+            configOptionsModal.classList.add('hidden');
+        }
+    });
 
     // --- MODAL LOGIC ---
     const showRulesBtn = document.getElementById('show-rules-btn');
@@ -643,7 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (isSelectText) {
             // For disabled selects, return N/A
-            if (element.closest('.hidden')) return 'N/A';
+            if (element.closest('.hidden') || element.disabled) return 'N/A';
             return element.options[element.selectedIndex].text;
         }
         return element.value || 'Not specified';
@@ -655,14 +1018,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateSummaryText() {
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
+        const hasCladding = claddingValue !== 'no';
+
         const tanksLength = parseInt(getOutputValue('tanks-length')) || 0;
         const compressorsLength = parseInt(getOutputValue('compressors-length')) || 0;
-        const { length: electricalPanelLength, width: electricalPanelWidth } = getElectricalPanelDimensions();
         
-        const totalLength = tanksLength + compressorsLength + electricalPanelLength;
-        const maxWidth = Math.max(currentMachineWidth, electricalPanelWidth);
-        const summary = `
-Elba Size Configurator Summary
+        const { length: b2bPanelLength, width: b2bPanelWidth } = getPanelDimensions('b2b');
+        const { length: headPanelLength, width: headPanelWidth } = getPanelDimensions('head');
+
+        let summary = `
+Machine Size Configurator Summary
 ================================
 Job Information
 - Job Year: ${getElementValue('job-year')}
@@ -677,10 +1043,11 @@ General
 
 ================================
 Tanks
-- Liquid Receiver Volume: ${getElementValue('liquid-receiver-volume', true)}
+- Tank Type: ${getElementValue('tank-type', true)}
+- Liquid Receiver Volume: ${getElementValue('liquid-receiver-volume', true) !== 'Select a volume...' ? getElementValue('liquid-receiver-volume', true) : getElementValue('coupled-liquid-receiver-volume', true)}
+- MT Suction Accumulator Volume: ${getElementValue('mt-suction-accumulator-volume', true)}
+- Secondary Line Accumulator: ${getElementValue('secondary-line-accumulator', true)}
 - Air Conditioning: ${getElementValue('air-conditioning', true)}
-- Liquid Subcooler: ${getElementValue('liquid-subcooler', true)}
-- Tanks Section Length: ${getOutputValue('tanks-length')}
 
 ================================
 Compressors
@@ -689,21 +1056,13 @@ Compressors
 - LT Compressors: ${getElementValue('num-lt')} (${getElementValue('type-lt', true)})
 - Oil Separator Model: ${getElementValue('oil-separator', true)}
 - Number of Heat Recoveries: ${getElementValue('heat-recoveries')}
----
-- Lower Deck Length: ${getOutputValue('lower-deck-length')}
-- Upper Deck Length: ${getOutputValue('upper-deck-length')}
-- Compressors Section Length: ${getOutputValue('compressors-length')}
+`;
 
+        summary += `
 ================================
 Electrical Panel
-- Panel Model: ${getElementValue('electrical-panel-model', true)}
-- Panel Orientation: ${getElementValue('electrical-panel-orientation', true)}
-- Electrical Panel Length: ${getOutputValue('electrical-panel-length')}
-
-================================
-Overall Dimensions
-- Total Length: ${totalLength} mm
-- Machine Width: ${maxWidth} mm
+- B2B Panel Model: ${getElementValue('b2b-panel-model', true)}
+- Head Panel Model: ${getElementValue('head-panel-model', true)}
 `;
         // Clean up whitespace for a neat summary
         return summary.trim().replace(/^\s+/gm, '');
@@ -727,44 +1086,188 @@ Overall Dimensions
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const summaryText = generateSummaryText();
+        const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
 
         const originalBtnText = downloadPdfBtn.textContent;
         downloadPdfBtn.textContent = 'Generating...';
         downloadPdfBtn.disabled = true;
 
-        html2canvas(visualizationContainer).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth();
+        document.body.classList.add('pdf-export-active');
+
+        // Use a short timeout to allow the browser to apply the 'pdf-export-active' styles
+        // before html2canvas starts rendering. This helps prevent race conditions.
+        setTimeout(() => {
             const margin = 15;
-            const contentWidth = pdfWidth - (margin * 2);
-            
-            const imgWidth = contentWidth;
-            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+            const contentWidth = doc.internal.pageSize.getWidth() - (margin * 2);
+
+            // --- Temporarily change visualization titles for PDF ---
+            const vizCards = multiVisualizationContainer.querySelectorAll('.card.drawing-container');
+            const originalTitles = [];
+
+            // --- Add checkbox options for PDF ---
+            const addedCheckboxes = [];
+            if (claddingValue === 'no') {
+                vizCards.forEach(card => {
+                    const checkboxContainer = document.createElement('div');
+                    checkboxContainer.className = 'pdf-checkbox-options';
+                    checkboxContainer.innerHTML = `<div class="pdf-option-line"><strong>Tanks:</strong><span>☐ Attached</span><span>☐ Not Attached</span></div><div class="pdf-option-line"><strong>El. Panel:</strong><span>☐ Attached</span><span>☐ Not Attached</span></div><div class="pdf-option-line"><strong>Distance Comp-Panel (if not attached):</strong><span>__________ mm</span></div>`;
+                    card.appendChild(checkboxContainer);
+                    addedCheckboxes.push(checkboxContainer);
+                });
+            }
+
+            if (vizCards.length > 0) {
+                vizCards.forEach((card, index) => {
+                    const titleElement = card.querySelector('h2');
+                    if (titleElement) {
+                        originalTitles[index] = titleElement.textContent; // Store original title
+                        if (index === 0) titleElement.textContent = '☐ Option A';
+                        if (index === 1) titleElement.textContent = '☐ Option B';
+                        if (index === 2) titleElement.textContent = '☐ Option C';
+                    }
+                });
+            }
 
             doc.setFontSize(18);
-            doc.text('Elba Size Configurator Summary', margin, 20);
+            doc.text('Machine Size Configurator Summary', margin, 20);
             
             doc.setFontSize(10);
             const textLines = doc.splitTextToSize(summaryText, contentWidth);
-            doc.text(textLines, margin, 30);
+            let currentY = 30;
+            const lineHeight = 5;
 
-            let finalY = (textLines.length * 5) + 35; // Estimate text height
+            textLines.forEach(line => {
+                // Check for page overflow before drawing a line
+                if (currentY > doc.internal.pageSize.getHeight() - margin) {
+                    doc.addPage();
+                    currentY = margin;
+                }
 
-            if (finalY + imgHeight > doc.internal.pageSize.getHeight() - margin) {
+                if (line.startsWith('- ') && line.includes(':')) {
+                    const parts = line.split(':');
+                    const label = parts[0] + ':';
+                    const value = parts.slice(1).join(':').trim();
+
+                    doc.setFont(undefined, 'bold');
+                    doc.text(label, margin, currentY);
+
+                    const labelWidth = doc.getTextWidth(label);
+                    
+                    doc.setFont(undefined, 'normal');
+                    doc.text(value, margin + labelWidth + 1, currentY); // +1 for a small space
+                } else {
+                    doc.setFont(undefined, 'normal');
+                    doc.text(line, margin, currentY);
+                }
+                currentY += lineHeight;
+            });
+
+            const addImageToPdf = (canvas, yPos) => {
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = doc.getImageProperties(imgData);
+                const imgWidth = contentWidth;
+                const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+                if (yPos + imgHeight > doc.internal.pageSize.getHeight() - margin) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                doc.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
+                return yPos + imgHeight + 20; // Return new Y position, with further reduced space
+            };
+
+            const cleanup = () => {
+                document.body.classList.remove('pdf-export-active'); // Deactivate PDF styles
+
+                // --- Remove added checkboxes ---
+                addedCheckboxes.forEach(el => el.remove());
+
+                // --- Restore original titles ---
+                if (vizCards.length > 0) {
+                    vizCards.forEach((card, index) => {
+                        const titleElement = card.querySelector('h2');
+                        if (titleElement && originalTitles[index]) {
+                            titleElement.textContent = originalTitles[index];
+                        }
+                    });
+                }
+
+                downloadPdfBtn.textContent = originalBtnText;
+                downloadPdfBtn.disabled = false;
+            };
+
+            const addImagesAndSave = (canvases) => {
+                // --- Disclaimer Logic ---
+                const disclaimerTitle = "Disclaimer";
+                const disclaimerText = "The measurements below are indicative and are intended to help in choosing the machine configuration. If the measurements are not satisfactory, please request a custom quotation.";
+                const disclaimerTitleLines = doc.splitTextToSize(disclaimerTitle, contentWidth);
+                const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
+                const disclaimerHeight = (disclaimerTitleLines.length + disclaimerLines.length) * lineHeight;
+
+                // --- Suggestions Logic ---
+                const suggestionsTitle = "Customer Suggestions";
+                const suggestionLinesContent = [
+                    "- If access behind the machine is possible, a Back to Back (B2B) electrical panel is suggested as it saves space.",
+                    "- If access behind the machine is not possible, a Head electrical panel is suggested."
+                ];
+                const titleLines = doc.splitTextToSize(suggestionsTitle, contentWidth);
+                const contentLines = doc.splitTextToSize(suggestionLinesContent.join("\n"), contentWidth);
+                const suggestionsHeight = ((titleLines.length + contentLines.length) * lineHeight) + 5; // +5 for spacing
+
+                // Calculate height of the first image to check for page break
+                const firstCanvas = canvases[0];
+                const imgProps = doc.getImageProperties(firstCanvas.toDataURL('image/png'));
+                const firstImageHeight = (imgProps.height * contentWidth) / imgProps.width;
+
+                // Always start the disclaimer section on a new page
                 doc.addPage();
-                finalY = margin;
+                currentY = margin;
+
+                // Write disclaimer
+                doc.setFont(undefined, 'bold');
+                doc.text(disclaimerTitleLines, margin, currentY);
+                currentY += disclaimerTitleLines.length * lineHeight;
+
+                doc.setFont(undefined, 'italic');
+                doc.text(disclaimerLines, margin, currentY);
+                currentY += disclaimerLines.length * lineHeight;
+
+                // Write suggestions
+                currentY += 5; // Add a bit of space between sections
+
+                doc.setFont(undefined, 'bold');
+                doc.text(titleLines, margin, currentY);
+                currentY += titleLines.length * lineHeight;
+
+                doc.setFont(undefined, 'normal');
+                doc.text(contentLines, margin, currentY);
+                currentY += contentLines.length * lineHeight;
+                
+                let imageY = currentY + 5; // Start images after suggestions, with reduced space
+
+                // Add all canvases to the PDF
+                canvases.forEach(canvas => {
+                    imageY = addImageToPdf(canvas, imageY);
+                });
+
+                doc.save('Machine_Configurator_Summary.pdf');
+            };
+
+            const promiseB2B = html2canvas(multiVisualizationContainer.children[0]);
+            const promiseHeadAligned = html2canvas(multiVisualizationContainer.children[1]);
+
+            if (claddingValue === 'no') {
+                const promiseHeadPerp = html2canvas(multiVisualizationContainer.children[2]);
+                Promise.all([promiseB2B, promiseHeadAligned, promiseHeadPerp]).then(addImagesAndSave).catch(err => {
+                    console.error('Failed to generate PDF:', err);
+                    alert('An error occurred while generating the PDF.');
+                }).finally(cleanup);
+            } else {
+                Promise.all([promiseB2B, promiseHeadAligned]).then(addImagesAndSave).catch(err => {
+                    console.error('Failed to generate PDF:', err);
+                    alert('An error occurred while generating the PDF.');
+                }).finally(cleanup);
             }
-
-            doc.addImage(imgData, 'PNG', margin, finalY, imgWidth, imgHeight);
-            doc.save('Elba_Configurator_Summary.pdf');
-
-        }).catch(err => {
-            console.error('Failed to generate PDF:', err);
-            alert('An error occurred while generating the PDF. Please try again.');
-        }).finally(() => {
-            downloadPdfBtn.textContent = originalBtnText;
-            downloadPdfBtn.disabled = false;
-        });
+        }, 100); // 100ms delay
     });
 });

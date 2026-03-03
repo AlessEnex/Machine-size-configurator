@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elba Size Configurator</title>
+    <title>Machine Size Configurator</title>
     <link rel="stylesheet" href="style.css"> <!-- Collega il file CSS -->
 </head>
 <body>
 
     <div class="configurator-container">
         <div class="header">
-            <h1>Elba Size Configurator</h1>
+            <h1>Machine Size Configurator</h1>
             <button id="show-rules-btn" class="info-button">Calculation Rules</button>
         </div>
 
@@ -51,53 +51,84 @@
                                 <input type="radio" name="cladding" value="yes"> Yes
                             </label>
                             <label class="radio-label">
+                                <input type="radio" name="cladding" value="yes_walk_in"> Yes + Walk-in
+                            </label>
+                            <label class="radio-label">
                                 <input type="radio" name="cladding" value="no" checked> No
                             </label>
                         </div>
                     </div>
                 </div>
-                <div class="card grey-t">
+                <div class="card grey-t text-center">
                     <h2>Machine Configuration</h2>
-                    <div class="input-group">
-                        <label>Configuration</label>
-                        <div class="radio-group">
-                            <label class="radio-label">
-                                <input type="radio" name="configuration" value="one_part" checked> One Part
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="configuration" value="two_parts"> Two Parts
-                            </label>
-                        </div>
-                    </div>
+                    <button id="show-config-options-btn" class="info-button">Advanced Options</button>
                 </div>
             </div>
 
             <div class="card blue-t">
                 <h2>Tanks</h2>
-    
+
                 <div class="input-group">
-                    <label for="liquid-receiver-volume">Liquid Receiver Volume</label>
-                    <select id="liquid-receiver-volume" name="liquid-receiver-volume">
-                        <option value="" disabled selected>Select a volume...</option>
-                        <option value="300L">300L</option>
-                        <option value="460L">460L</option>
-                        <option value="700L">700L</option>
-                        <option value="1000L">1000L</option>
-                        <option value="2x570L">2x570L</option>
-                    </select>
+                    <label>Tank Type</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="tank-type" value="single" checked> Single
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="tank-type" value="coupled"> Coupled
+                        </label>
+                    </div>
+                </div>
+    
+                <div id="single-tank-group">
+                    <div class="input-group">
+                        <label for="liquid-receiver-volume">Liquid Receiver Volume</label>
+                        <select id="liquid-receiver-volume" name="liquid-receiver-volume">
+                            <option value="" disabled selected>Select a volume...</option>
+                            <option value="150L/185L">150L / 185L</option>
+                            <option value="300L">300L</option>
+                            <option value="350L">350L</option>
+                            <option value="460L">460L</option>
+                            <option value="700L">700L</option>
+                            <option value="1000L">1000L</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="coupled-tanks-group" class="hidden">
+                    <div class="input-group">
+                        <label for="coupled-liquid-receiver-volume">Coupled Liquid Receiver Volume</label>
+                        <select id="coupled-liquid-receiver-volume" name="coupled-liquid-receiver-volume">
+                            <option value="" disabled selected>Select a volume...</option>
+                            <option value="350+310L">350 + 310 L</option>
+                            <option value="350+350L">350 + 350 L</option>
+                            <option value="570+350L">570 + 350 L</option>
+                            <option value="570+570L">570 + 570 L</option>
+                        </select>
+                    </div>
                 </div>
     
                 <div class="input-group">
-                    <label for="air-conditioning">Air Conditioning</label>
-                    <select id="air-conditioning" name="air-conditioning">
+                    <label for="mt-suction-accumulator-volume">MT Suction Accumulator Volume</label>
+                    <select id="mt-suction-accumulator-volume" name="mt-suction-accumulator-volume">
+                        <option value="" disabled selected>Select a volume...</option>
+                        <option value="122L">122 L</option>
+                        <option value="200L">200 L</option>
+                        <option value="275L">275 L</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="secondary-line-accumulator">Secondary Line Accumulator</label>
+                    <select id="secondary-line-accumulator" name="secondary-line-accumulator">
                         <option value="no" selected>No</option>
                         <option value="yes">Yes</option>
                     </select>
                 </div>
-    
+
                 <div class="input-group">
-                    <label for="liquid-subcooler">Liquid Subcooler</label>
-                    <select id="liquid-subcooler" name="liquid-subcooler">
+                    <label for="air-conditioning">Air Conditioning</label>
+                    <select id="air-conditioning" name="air-conditioning">
                         <option value="no" selected>No</option>
                         <option value="yes">Yes</option>
                     </select>
@@ -108,6 +139,16 @@
                 <div class="output-group final-result">
                     <span class="output-label">Tanks Section Length:</span>
                     <span id="tanks-length" class="output-value">0 mm</span>
+                </div>
+
+                <div class="output-group">
+                    <span class="output-label">Tanks Section Width:</span>
+                    <span id="tanks-width" class="output-value">0 mm</span>
+                </div>
+
+                <div class="output-group">
+                    <span class="output-label">Machine Height:</span>
+                    <span id="machine-height" class="output-value">0 mm</span>
                 </div>
             </div>
         </div>
@@ -223,6 +264,7 @@
                 <label for="oil-separator">Oil Separator Model</label>
                 <select id="oil-separator" name="oil-separator">
                     <option value="" disabled selected>Select a model...</option>
+                    <option value="BOS4-CDH-1AFO">BOS4-CDH-1AFO</option>
                     <option value="BOS4-CDH-1BFO">BOS4-CDH-1BFO</option>
                     <option value="BOS4-CDH-1NFO">BOS4-CDH-1NFO</option>
                     <option value="BOS4-CDH-1CFO">BOS4-CDH-1CFO</option>
@@ -257,6 +299,11 @@
                 <span class="output-label">Compressors Section Length:</span>
                 <span id="compressors-length" class="output-value">0 mm</span>
             </div>
+
+            <div class="output-group">
+                <span class="output-label">Compressors Section Width:</span>
+                <span id="compressors-width" class="output-value">0 mm</span>
+            </div>
         </div>
 
         <div class="card grey-t">
@@ -277,26 +324,30 @@
         <div class="card orange-t">
             <h2>Electrical Panel</h2>
 
-            <div class="input-group">
-                <label for="electrical-panel-model">Panel Model (L x H x W)</label>
-                <select id="electrical-panel-model" name="electrical-panel-model">
-                    <option value="" selected>Select a panel...</option>
-                </select>
+            <div id="b2b-panel-group">
+                <div class="input-group">
+                    <label for="b2b-panel-model">B2B Panel Model (L x H x W)</label>
+                    <select id="b2b-panel-model" name="b2b-panel-model">
+                        <option value="" selected>Select a B2B panel...</option>
+                    </select>
+                </div>
             </div>
 
-            <div id="orientation-group" class="input-group hidden">
-                <label for="electrical-panel-orientation">Panel Orientation</label>
-                <select id="electrical-panel-orientation" name="electrical-panel-orientation">
-                    <option value="aligned" selected>Aligned</option>
-                    <option value="perpendicular">Perpendicular</option>
-                </select>
-            </div>
-
-            <hr class="section-separator">
-
-            <div class="output-group final-result">
-                <span class="output-label">Electrical Panel Length:</span>
-                <span id="electrical-panel-length" class="output-value">0 mm</span>
+            <div id="head-panel-group">
+                <div class="input-group">
+                    <label for="head-panel-model">Head Panel Model (L x H x W)</label>
+                    <select id="head-panel-model" name="head-panel-model">
+                        <option value="" selected>Select a Head panel...</option>
+                    </select>
+                </div>
+    
+                <div id="orientation-group" class="input-group">
+                    <label for="electrical-panel-orientation">Panel Orientation</label>
+                    <select id="electrical-panel-orientation" name="electrical-panel-orientation">
+                        <option value="aligned" selected>Aligned</option>
+                        <option value="perpendicular">Perpendicular</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -325,11 +376,97 @@
             <button id="show-override-btn" class="info-button">Manual Override</button>
         </div>
 
-        <div class="card drawing-container" id="visualization-container">
+        <div id="single-visualization-container" class="card drawing-container">
             <h2>2D Visualization</h2>
             <div class="drawing-wrapper" id="visualization-wrapper">
                 <div class="parts-container" id="parts-container"></div>
-                <div class="dimensions-container" id="dimensions-container"></div>
+            </div>
+            <div class="dimensions-container" id="dimensions-container"></div>
+            <div id="overall-dimensions-display" class="hidden">
+                <hr class="section-separator">
+                <div class="output-group">
+                   <span class="output-label">Overall Length (with Cladding):</span>
+                   <span id="overall-length-output" class="output-value">0 mm</span>
+               </div>
+               <div class="output-group">
+                   <span class="output-label">Overall Width (with Cladding):</span>
+                   <span id="overall-width-output" class="output-value">0 mm</span>
+               </div>
+               <div class="output-group">
+                   <span class="output-label">Overall Height:</span>
+                   <span id="overall-height-output" class="output-value">0 mm</span>
+               </div>
+           </div>
+        </div>
+
+        <div id="multi-visualization-container" class="hidden">
+            <div class="card drawing-container">
+                <h2>2D Visualization (with B2B Panel)</h2>
+                <div class="drawing-wrapper" id="visualization-wrapper-b2b">
+                    <div class="parts-container" id="parts-container-b2b"></div>
+                </div>
+                <div class="dimensions-container" id="dimensions-container-b2b"></div>
+                <div class="overall-dimensions-display" id="overall-dimensions-display-b2b">
+                    <hr class="section-separator">
+                    <div class="output-group">
+                       <span id="overall-length-label-b2b" class="output-label">Overall Length:</span>
+                       <span id="overall-length-output-b2b" class="output-value">0 mm</span>
+                   </div>
+                   <div class="output-group">
+                       <span id="overall-width-label-b2b" class="output-label">Overall Width:</span>
+                       <span id="overall-width-output-b2b" class="output-value">0 mm</span>
+                   </div>
+                   <div class="output-group">
+                       <span id="overall-height-label-b2b" class="output-label">Overall Height:</span>
+                       <span id="overall-height-output-b2b" class="output-value">0 mm</span>
+                   </div>
+               </div>
+            </div>
+
+            <div class="card drawing-container">
+                <h2>2D Visualization (with Head Panel - Aligned)</h2>
+                <div class="drawing-wrapper" id="visualization-wrapper-head-aligned">
+                    <div class="parts-container" id="parts-container-head-aligned"></div>
+                </div>
+                <div class="dimensions-container" id="dimensions-container-head-aligned"></div>
+                <div class="overall-dimensions-display" id="overall-dimensions-display-head-aligned">
+                    <hr class="section-separator">
+                    <div class="output-group">
+                       <span id="overall-length-label-head-aligned" class="output-label">Overall Length:</span>
+                       <span id="overall-length-output-head-aligned" class="output-value">0 mm</span>
+                   </div>
+                   <div class="output-group">
+                       <span id="overall-width-label-head-aligned" class="output-label">Overall Width:</span>
+                       <span id="overall-width-output-head-aligned" class="output-value">0 mm</span>
+                   </div>
+                   <div class="output-group">
+                       <span id="overall-height-label-head-aligned" class="output-label">Overall Height:</span>
+                       <span id="overall-height-output-head-aligned" class="output-value">0 mm</span>
+                   </div>
+               </div>
+            </div>
+
+            <div class="card drawing-container">
+                <h2>2D Visualization (with Head Panel - Perpendicular)</h2>
+                <div class="drawing-wrapper" id="visualization-wrapper-head-perp">
+                    <div class="parts-container" id="parts-container-head-perp"></div>
+                </div>
+                <div class="dimensions-container" id="dimensions-container-head-perp"></div>
+                <div class="overall-dimensions-display" id="overall-dimensions-display-head-perp">
+                    <hr class="section-separator">
+                    <div class="output-group">
+                       <span id="overall-length-label-head-perp" class="output-label">Overall Length:</span>
+                       <span id="overall-length-output-head-perp" class="output-value">0 mm</span>
+                   </div>
+                   <div class="output-group">
+                       <span id="overall-width-label-head-perp" class="output-label">Overall Width:</span>
+                       <span id="overall-width-output-head-perp" class="output-value">0 mm</span>
+                   </div>
+                   <div class="output-group">
+                       <span id="overall-height-label-head-perp" class="output-label">Overall Height:</span>
+                       <span id="overall-height-output-head-perp" class="output-value">0 mm</span>
+                   </div>
+               </div>
             </div>
         </div>
 
@@ -345,29 +482,53 @@
             <div class="modal-content">
                 <button id="close-rules-btn" class="modal-close-button">&times;</button>
                 <h2>Calculation Rules</h2>
-                <h3>Tanks Section</h3>
+
+                <h3>Overall Dimensions</h3>
                 <ul>
-                    <li><strong>Base Length (based on Liquid Receiver Volume):</strong>
+                    <li><strong>Cladding:</strong> Adds 50 mm to each side (total +100 mm to length and width).</li>
+                    <li><strong>Cladding (Walk-in):</strong> In addition to the standard 50 mm, it adds 1000 mm to the overall width.</li>
+                    <li><strong>Machine Height:</strong>
                         <ul>
-                            <li>300L: 1500 mm</li>
-                            <li>460L: 1600 mm</li>
-                            <li>700L: 1900 mm</li>
-                            <li>1000L: 2300 mm</li>
-                            <li>2x570L: 2500 mm</li>
+                            <li><strong>No Cladding:</strong> Height is determined by the selected tank volume.</li>
+                            <li><strong>With Cladding (Yes or Yes + Walk-in):</strong> Base height + 300 mm, capped at a maximum of 2500 mm.</li>
                         </ul>
                     </li>
-                    <li><strong>Air Conditioning:</strong> Adds 1000 mm.</li>
-                    <li><strong>Liquid Subcooler:</strong> Adds 300 mm.</li>
-                    <li><strong>Two Parts Configuration:</strong> Adds 100 mm.</li>
                 </ul>
-    
+
+                <h3>Tanks Section</h3>
+                <h4>Tanks Section Length</h4>
+                <ul>
+                    <li><strong>Base Length (Liquid Receiver):</strong> Calculated based on the selected volume.
+                        <ul>
+                            <li>150L/185L: 600 mm</li>
+                            <li>300L/350L/460L: 800 mm</li>
+                            <li>700L: 1000 mm</li>
+                            <li>1000L: 1100 mm (for single tanks)</li>
+                            <li>Coupled 350+310L: 1400 mm</li>
+                            <li>Coupled 350+350L / 570+350L: 1550 mm</li>
+                            <li>Coupled 570+570L: 1600 mm (for coupled tanks)</li>
+                        </ul>
+                    </li>
+                    <li><strong>MT Suction Accumulator:</strong> Adds length based on volume (900 mm or 1100 mm).</li>
+                    <li><strong>Secondary Line Accumulator:</strong> Adds 500 mm if 'Yes'.</li>
+                    <li><strong>Air Conditioning:</strong> Adds 800 mm if 'Yes'.</li>
+                    <li><strong>Two Parts Configuration:</strong> Adds 100 mm.</li>
+                    <li><strong>K65 Connections (in Two Parts mode):</strong> Adds an additional 100 mm.</li>
+                </ul>
+                <h4>Tanks Section Width</h4>
+                <ul>
+                    <li><strong>150L/185L Receiver:</strong> 1000 mm.</li>
+                    <li><strong>300L or 350L Receiver:</strong> 1100 mm.</li>
+                    <li><strong>All other configurations:</strong> 1200 mm.</li>
+                </ul>
+
                 <h3>Compressors Section</h3>
                 <h4>Lower Deck Length</h4>
                 <ul>
                     <li><strong>MT/Aux Compressors (2/4-Cyl):</strong> 500 mm per compressor.</li>
                     <li><strong>MT/Aux Compressors (6-Cyl):</strong> 700 mm per compressor.</li>
                     <li><strong>LT (6-Cyl):</strong> Adds 700 mm per compressor to this deck.</li>
-                    <li><strong>Oil Separator:</strong> Adds length based on the selected model.</li>
+                    <li><strong>Oil Separator:</strong> Adds length based on the selected model (e.g., 400 mm to 1000 mm).</li>
                 </ul>
     
                 <h4>Upper Deck Length</h4>
@@ -375,10 +536,36 @@
                     <li><strong>LT (2/4-Cyl):</strong> 500 mm per compressor.</li>
                     <li><strong>Heat Recoveries:</strong> Adds 500 mm per unit.</li>
                     <li><strong>Oil Reserve:</strong> Adds a fixed 600 mm.</li>
+                    <li><strong>Oil Separator:</strong> Adds length based on the selected model (to ensure final max length is correct).</li>
                 </ul>
     
                 <h4>Final Compressors Length</h4>
-                <p>The final length for the compressors section is the <strong>longer</strong> of the Lower Deck and Upper Deck lengths.</p>
+                <p>The final length is the <strong>maximum</strong> of the Lower Deck and Upper Deck lengths. An additional 100 mm is added if using K65 connections in "Two Parts" mode.</p>
+
+                <h4>Compressors Section Width</h4>
+                <ul>
+                    <li><strong>Any 6-Cylinder Compressor:</strong> 1200 mm.</li>
+                    <li><strong>No 6-Cyl, with LT 4-Cyl:</strong> 1100 mm.</li>
+                    <li><strong>No 6-Cyl, with LT 2-Cyl (or no LT):</strong> 1000 mm.</li>
+                </ul>
+
+                <h3>Electrical Panel</h3>
+                <ul>
+                    <li><strong>B2B Panel:</strong> Dimensions (L x H x W) are fixed by model. "Opening" labels appear above and below the panel in 2D visualization.</li>
+                    <li><strong>Head Panel:</strong> Dimensions (L x H x W) are fixed by model.
+                        <ul>
+                            <li><strong>Orientation "Aligned":</strong> Panel length is L, width is W. "Opening" label appears below the panel.</li>
+                            <li><strong>Orientation "Perpendicular":</strong> Panel length is W, width is L (rotated). "Opening" label appears along the right side of the panel (rotated).</li>
+                            <li><strong>Cladding Rule:</strong> If Cladding ("Yes" or "Yes + Walk-in") is selected, the Head Panel orientation is automatically forced to "Aligned" and cannot be changed.</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3>2D Visualization</h3>
+                <ul>
+                    <li><strong>Cladding "No":</strong> Shows three configurations (B2B, Head Aligned, Head Perpendicular).</li>
+                    <li><strong>Cladding "Yes" or "Yes + Walk-in":</strong> Shows two configurations (B2B, Head Aligned). The Head Perpendicular option is not applicable and therefore not shown.</li>
+                </ul>
             </div>
         </div>
 
@@ -408,6 +595,26 @@
                 </div>
 
                 <button id="apply-override-btn" class="info-button">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Machine Configuration Options -->
+    <div id="config-options-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="close-config-options-btn" class="modal-close-button">&times;</button>
+            <h2>Machine Configuration</h2>
+            
+            <div class="input-group">
+                <label>Configuration</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="configuration" value="one_part"> One Part
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="configuration" value="two_parts" checked> Two Parts
+                    </label>
+                </div>
             </div>
         </div>
     </div>
