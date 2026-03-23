@@ -59,6 +59,20 @@
                         </div>
                     </div>
                 </div>
+                <div class="card grey-t">
+                    <h2>Connections</h2>
+                    <div class="input-group">
+                        <label>Material</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="connections" value="inox" checked> Stainless Steel
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="connections" value="k65"> K65
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 <div class="card grey-t text-center">
                     <h2>Machine Configuration</h2>
                     <button id="show-config-options-btn" class="info-button">Advanced Options</button>
@@ -104,6 +118,8 @@
                             <option value="350+350L">350 + 350 L</option>
                             <option value="570+350L">570 + 350 L</option>
                             <option value="570+570L">570 + 570 L</option>
+                            <option value="2x430L">2 x 430 L</option>
+                            <option value="2x1000L">2 x 1000 L</option>
                         </select>
                     </div>
                 </div>
@@ -151,9 +167,8 @@
                     <span id="machine-height" class="output-value">0 mm</span>
                 </div>
             </div>
-        </div>
 
-        <div class="card purple-t">
+            <div class="card purple-t">
             <h2>Compressors</h2>
 
             <div class="compressor-grid">
@@ -262,14 +277,20 @@
 
             <div class="input-group">
                 <label for="oil-separator">Oil Separator Model</label>
-                <select id="oil-separator" name="oil-separator">
-                    <option value="" disabled selected>Select a model...</option>
-                    <option value="BOS4-CDH-1AFO">BOS4-CDH-1AFO</option>
-                    <option value="BOS4-CDH-1BFO">BOS4-CDH-1BFO</option>
-                    <option value="BOS4-CDH-1NFO">BOS4-CDH-1NFO</option>
-                    <option value="BOS4-CDH-1CFO">BOS4-CDH-1CFO</option>
-                    <option value="BOS4-CDH-1DFO">BOS4-CDH-1DFO</option>
-                </select>
+                <div class="selector-with-action">
+                    <select id="oil-separator" name="oil-separator">
+                        <option value="" disabled selected>Select a model...</option>
+                        <option value="BOS4-CDH-1AFO">BOS4-CDH-1AFO</option>
+                        <option value="BOS4-CDH-1BFO">BOS4-CDH-1BFO</option>
+                        <option value="BOS4-CDH-1NFO">BOS4-CDH-1NFO</option>
+                        <option value="BOS4-CDH-1CFO">BOS4-CDH-1CFO</option>
+                        <option value="BOS4-CDH-1DFO">BOS4-CDH-1DFO</option>
+                        <option value="2x-BOS4-CDH-1DFO">2 x BOS4-CDH-1DFO</option>
+                    </select>
+                    <button id="magic-compile-oil-separator-btn" type="button" class="info-button magic-compile-btn icon-only-btn" title="Magic Compile Oil Separator" aria-label="Magic Compile Oil Separator">
+                        &#10022;
+                    </button>
+                </div>
             </div>
 
             <div class="input-group">
@@ -278,6 +299,8 @@
                     <option value="0" selected>0</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
                 </select>
             </div>
 
@@ -305,40 +328,33 @@
                 <span id="compressors-width" class="output-value">0 mm</span>
             </div>
         </div>
-
-        <div class="card grey-t">
-            <h2>Connections</h2>
-            <div class="input-group">
-                <label>Material</label>
-                <div class="radio-group">
-                    <label class="radio-label">
-                        <input type="radio" name="connections" value="inox" checked> Stainless Steel
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="connections" value="k65"> K65
-                    </label>
-                </div>
-            </div>
         </div>
 
         <div class="card orange-t">
             <h2>Electrical Panel</h2>
+            <div class="pre-visualization-controls">
+                <button id="magic-fill-panels-btn" type="button" class="info-button icon-only-btn" title="Magic Fill Panels" aria-label="Magic Fill Panels">
+                    &#10022;
+                </button>
+            </div>
 
             <div id="b2b-panel-group">
                 <div class="input-group">
-                    <label for="b2b-panel-model">B2B Panel Model (L x H x W)</label>
-                    <select id="b2b-panel-model" name="b2b-panel-model">
+                    <label for="b2b-panel-model">B2B Panel Model (L, W, H)</label>
+                    <select id="b2b-panel-model" name="b2b-panel-model" class="panel-select-native">
                         <option value="" selected>Select a B2B panel...</option>
                     </select>
+                    <div id="b2b-panel-cards" class="panel-cards-row" aria-label="B2B panel cards"></div>
                 </div>
             </div>
 
             <div id="head-panel-group">
                 <div class="input-group">
-                    <label for="head-panel-model">Head Panel Model (L x H x W)</label>
-                    <select id="head-panel-model" name="head-panel-model">
+                    <label for="head-panel-model">Head Panel Model (L, W, H)</label>
+                    <select id="head-panel-model" name="head-panel-model" class="panel-select-native">
                         <option value="" selected>Select a Head panel...</option>
                     </select>
+                    <div id="head-panel-cards" class="panel-cards-row" aria-label="Head panel cards"></div>
                 </div>
     
                 <div id="orientation-group" class="input-group">
@@ -507,6 +523,8 @@
                             <li>Coupled 350+310L: 1400 mm</li>
                             <li>Coupled 350+350L / 570+350L: 1550 mm</li>
                             <li>Coupled 570+570L: 1600 mm (for coupled tanks)</li>
+                            <li>Coupled 2x430L: 2000 mm (for coupled tanks)</li>
+                            <li>Coupled 2x1000L: 2000 mm (for coupled tanks)</li>
                         </ul>
                     </li>
                     <li><strong>MT Suction Accumulator:</strong> Adds length based on volume (900 mm or 1100 mm).</li>
@@ -528,7 +546,7 @@
                     <li><strong>MT/Aux Compressors (2/4-Cyl):</strong> 500 mm per compressor.</li>
                     <li><strong>MT/Aux Compressors (6-Cyl):</strong> 700 mm per compressor.</li>
                     <li><strong>LT (6-Cyl):</strong> Adds 700 mm per compressor to this deck.</li>
-                    <li><strong>Oil Separator:</strong> Adds length based on the selected model (e.g., 400 mm to 1000 mm).</li>
+                    <li><strong>Oil Separator:</strong> Adds length based on the selected model (e.g., 400 mm to 2000 mm).</li>
                 </ul>
     
                 <h4>Upper Deck Length</h4>
@@ -551,8 +569,8 @@
 
                 <h3>Electrical Panel</h3>
                 <ul>
-                    <li><strong>B2B Panel:</strong> Dimensions (L x H x W) are fixed by model. "Opening" labels appear above and below the panel in 2D visualization.</li>
-                    <li><strong>Head Panel:</strong> Dimensions (L x H x W) are fixed by model.
+                    <li><strong>B2B Panel:</strong> Dimensions (L, W, H) are fixed by model. "Opening" labels appear above and below the panel in 2D visualization.</li>
+                    <li><strong>Head Panel:</strong> Dimensions (L, W, H) are fixed by model.
                         <ul>
                             <li><strong>Orientation "Aligned":</strong> Panel length is L, width is W. "Opening" label appears below the panel.</li>
                             <li><strong>Orientation "Perpendicular":</strong> Panel length is W, width is L (rotated). "Opening" label appears along the right side of the panel (rotated).</li>
@@ -592,6 +610,11 @@
                 <div class="input-group">
                     <label for="manual-machine-width">Overall Machine Width (mm)</label>
                     <input type="number" id="manual-machine-width" placeholder="e.g., 1000" min="0">
+                </div>
+
+                <div class="input-group">
+                    <label for="manual-machine-height">Overall Machine Height (mm)</label>
+                    <input type="number" id="manual-machine-height" placeholder="e.g., 2300" min="0">
                 </div>
 
                 <button id="apply-override-btn" class="info-button">Apply Changes</button>

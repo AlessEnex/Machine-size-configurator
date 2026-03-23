@@ -1,20 +1,28 @@
-/* styles.css - Centralized application styles */
-
 :root {
-  --primary-color: #007bff;
-  --success-color: #28a745;
-  --danger-color: #dc3545;
-  --warning-color: #ff9800;
-  --electrical-panel-color: #64b5f6; /* Light Blue */
-  --purple-color: #007bff; /* Medium Blue for compressors */
-  --tanks-color: #004085; /* Dark Blue */
-  --grey-color: #9e9e9e;
-  --border-color: #ccc;
-  --bg-light: #f0f2f5;
-  --bg-card: #fff;
-  --text-primary: #333;
-  --text-secondary: #666;
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --bg: #f3f4f6;
+  --bg-2: #e9ebef;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-strong: rgba(255, 255, 255, 0.88);
+  --surface-muted: rgba(248, 249, 251, 0.82);
+
+  --text: #111827;
+  --text-muted: #5f6b7a;
+
+  --line: rgba(17, 24, 39, 0.12);
+  --line-strong: rgba(17, 24, 39, 0.22);
+
+  --accent-blue: #1f3a5f;
+  --accent-green: #5c7263;
+  --accent-gold: #9a8759;
+
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+
+  --radius: 14px;
+  --radius-sm: 10px;
 }
 
 * {
@@ -22,587 +30,740 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
-  padding: 30px;
-  background-color: var(--bg-light);
-  color: var(--text-primary);
+  padding: var(--space-4);
+  min-height: 100vh;
+  color: var(--text);
+  font-family: "Inter", "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.35;
+  background:
+    radial-gradient(1200px 500px at -10% -20%, rgba(17, 24, 39, 0.05), transparent 62%),
+    radial-gradient(900px 500px at 110% 10%, rgba(17, 24, 39, 0.035), transparent 60%),
+    linear-gradient(150deg, var(--bg), var(--bg-2));
+}
+
+.configurator-container {
+  max-width: 1380px;
+  margin: 0 auto;
 }
 
 .header {
-    text-align: center;
-    margin-bottom: 30px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: 0 2px var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 h1 {
-  color: #444;
-  margin-bottom: 15px;
-}
-
-.text-center {
-    text-align: center;
+  font-size: clamp(1.28rem, 2.2vw, 1.86rem);
+  text-transform: uppercase;
+  color: #0f172a;
 }
 
 h2 {
-  margin-top: 0;
-  font-size: 1.1em;
-  color: #555;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 20px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #1e293b;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
-/* === CARTE/SEZIONI === */
+h3 {
+  font-size: 0.88rem;
+  margin: var(--space-3) 0 var(--space-2);
+  color: #1f2937;
+}
+
+h4 {
+  font-size: 0.8rem;
+  margin: var(--space-2) 0 var(--space-1);
+  color: #334155;
+}
+
+.text-center {
+  text-align: center;
+}
+
 .card {
-  background: var(--bg-card);
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line-strong);
+  border-radius: var(--radius);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
-.card.blue-t { border-left: 6px solid var(--tanks-color); }
-.card.green-t { border-left: 6px solid var(--success-color); }
-.card.purple-t { border-left: 6px solid var(--purple-color); }
-.card.orange-t { border-left: 6px solid var(--electrical-panel-color); }
-.card.grey-t { border-left: 6px solid var(--grey-color); }
+.card.blue-t { border-left-color: var(--accent-blue); }
+.card.green-t { border-left-color: var(--accent-green); }
+.card.purple-t { border-left-color: #4b5563; }
+.card.orange-t { border-left-color: var(--accent-gold); }
+.card.grey-t { border-left-color: #64748b; }
 
-/* New layout for Cladding, Tanks, Compressors */
 .three-column-layout {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start; /* Align cards to the top */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .three-column-layout > .card,
 .three-column-layout > .layout-column {
-    flex: 1; /* Each child takes up equal space */
+  min-width: 0;
 }
 
-/* New layout for compressor selection */
-.compressor-grid {
-    display: flex;
-    gap: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-}
-
-.compressor-column {
-    flex: 1;
-}
-
-
-/* Specific layout for Job Info */
 .job-info-grid {
-    display: flex;
-    gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
-.job-info-grid .input-group {
-    flex: 1;
-    /* Reset margin-bottom as gap is used for horizontal spacing */
-    margin-bottom: 0;
+.compressor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
-/* === FORM ELEMENTS === */
 .input-group {
-    margin-bottom: 20px;
+  margin-bottom: var(--space-3);
+}
+
+.input-group.needs-input label::after {
+  content: "  required";
+  color: #8b5e3c;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-1);
+  font-size: 0.73rem;
   font-weight: 600;
-  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #334155;
 }
 
 input[type="text"],
 input[type="number"],
 select {
   width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background-color: var(--bg-card);
-  font-size: 1em;
-  transition: border-color 0.3s;
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 0.9rem;
 }
 
 select {
   cursor: pointer;
 }
 
+input::placeholder {
+  color: #8a95a5;
+}
+
 input[type="text"]:focus,
 input[type="number"]:focus,
 select:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: rgba(31, 58, 95, 0.4);
+  box-shadow: 0 0 0 3px rgba(31, 58, 95, 0.08);
 }
 
-/* === Radio Button Group === */
+input.needs-input,
+select.needs-input {
+  border-color: rgba(138, 92, 65, 0.5);
+  box-shadow: 0 0 0 3px rgba(138, 92, 65, 0.1);
+}
+
+select.non-preferred-selection {
+  color: #7b8798;
+  border-color: rgba(17, 24, 39, 0.14);
+  box-shadow: none;
+}
+
+.selector-with-action {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.selector-with-action select {
+  flex: 1;
+}
+
+.panel-select-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.panel-cards-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 2px 2px 6px;
+}
+
+.panel-height-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel-height-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.panel-height-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+
+.panel-card {
+  flex: 0 0 190px;
+  height: 88px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, opacity 180ms ease, transform 180ms ease;
+}
+
+.panel-card:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.panel-card .panel-title {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.panel-card .panel-dims {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.panel-card.non-preferred {
+  opacity: 0.42;
+  filter: saturate(0.75);
+}
+
+.panel-card.selected {
+  border-color: rgba(31, 58, 95, 0.45);
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+}
+
 .radio-group {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    padding: 8px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  padding-top: var(--space-1);
 }
 
 .radio-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-weight: normal; /* Override the default label bold */
-    font-size: 1em;
-    margin-bottom: 0; /* Override default label margin */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .radio-label input[type="radio"] {
-    margin-right: 8px;
-    accent-color: var(--primary-color);
+  margin: 0;
+  accent-color: var(--accent-blue);
 }
 
-/* === BUTTONS === */
 .info-button {
-    background-color: transparent;
-    color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 0.9em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
+  border: 1px solid rgba(17, 24, 39, 0.18);
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: #1f2937;
+  padding: 8px 13px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .info-button:hover {
-    background-color: var(--primary-color);
-    color: white;
+  transform: translateY(-1px);
+  background: #ffffff;
+  border-color: rgba(17, 24, 39, 0.3);
 }
 
-/* === SEPARATOR & RESULTS === */
+.info-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 58, 95, 0.12);
+}
+
+.magic-compile-btn {
+  white-space: nowrap;
+}
+
+.icon-only-btn {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  line-height: 1;
+}
+
 .section-separator {
-    border: none;
-    border-top: 1px solid #eee;
-    margin: 20px 0;
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: var(--space-3) 0;
 }
 
 .output-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
-    padding: 5px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: 2px 0;
 }
 
 .output-label {
-    font-size: 0.95em;
-    color: var(--text-secondary);
+  font-size: 0.77rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .output-value {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
 }
 
-/* Final result in a section */
-.output-group.final-result .output-label {
-    font-size: 1.1em;
-    font-weight: 600;
-    color: var(--text-primary);
-}
+.output-group.final-result .output-label,
 .output-group.final-result .output-value {
-    font-size: 1.3em;
-    color: var(--primary-color);
+  color: #2f4b3a;
 }
 
-/* Controls before visualization */
-.pre-visualization-controls {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
+.pre-visualization-controls,
 .export-controls {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    /* This creates a 20px gap from the card above in the default view (20px card margin + 0px margin-top) */
-    margin-top: 0;
-    margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
 }
 
-/* When in compact view, the card above has only 15px margin, so we add 5px to reach the 20px target gap */
-#multi-visualization-container.compact-view + .export-controls {
-    margin-top: 5px;
-}
-
-/* Reduce spacing between visualization cards when in 'no cladding' mode */
 .compact-view > .card {
-    margin-bottom: 15px;
+  margin-bottom: var(--space-2);
 }
-
-
-/* === 2D DRAWING SECTION === */
 
 .drawing-wrapper {
-  min-height: 100px; /* Minimum height, the real height is dynamic via JS */
+  min-height: 96px;
   width: 100%;
-  border-radius: 5px;
   position: relative;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.78);
+  overflow: hidden;
 }
 
 .parts-container {
   display: flex;
   align-items: center;
   position: relative;
+  max-width: 100%;
 }
 
 .drawing-part {
   height: 100%;
-  position: relative;
+  width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 0.9em;
-  transition: width 0.4s ease-in-out;
-  width: 0; /* Initially 0, managed by JS */
-  padding: 5px;
-  text-align: center;
+  position: relative;
+  padding: var(--space-1);
+  color: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 700;
   white-space: nowrap;
-}
-
-.drawing-part:last-child {
-    border-right: none;
-}
-
-.part-dimensions {
-    margin-top: 8px;
-    font-size: 1.1em;
-    font-weight: 600;
-}
-
-.opening-label {
-    position: absolute;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--text-primary);
-    font-size: 0.75em;
-    font-weight: bold;
-    padding: 1px;
-    border-radius: 3px;
-    white-space: nowrap;
-    z-index: 10; /* Ensure it's above the background */
-}
-
-.opening-label.top {
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-bottom: 4px;
-}
-
-.opening-label.bottom {
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 4px;
-}
-
-.opening-label.right {
-    left: 90%;
-    top: 50%;
-    transform: translateY(-50%) rotate(-90deg);
-    transform-origin: center;
-    margin-left: 4px;
-}
-
-.dimensions-container {
-    width: 100%;
-    height: 20px; /* Height for the dimension lines and margin */
-    position: relative;
-}
-
-.dimension-line {
-    position: absolute;
-    bottom: 5px; /* Position from the bottom of the container, leaving space for text */
-    height: 15px;
-    border-left: 1px solid var(--text-primary);
-    border-right: 1px solid var(--text-primary);
-    border-bottom: 1px solid var(--text-primary);
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-}
-
-.dimension-text {
-    font-size: 0.8em;
-    font-weight: 600;
-    color: var(--text-primary);
-    background-color: var(--bg-card);
-    padding: 0 4px;
-    transform: translateY(50%); /* Center vertically on the line */
+  transition: width 0.3s ease;
+  text-align: center;
 }
 
 .drawing-part + .drawing-part {
-    border-left: 1px solid rgba(255, 255, 255, 0.5);
+  border-left: 1px solid rgba(255, 255, 255, 0.45);
 }
 
-.blue-bg { background-color: var(--tanks-color); }
-.purple-bg { background-color: var(--purple-color); }
-.orange-bg { background-color: var(--electrical-panel-color); }
+.part-dimensions {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.opening-label {
+  position: absolute;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: #1f2937;
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.opening-label.top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+}
+
+.opening-label.bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+}
+
+.opening-label.right {
+  left: 90%;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center;
+  margin-left: 4px;
+}
+
+.dimensions-container {
+  width: 100%;
+  height: 20px;
+  position: relative;
+}
+
+.dimension-line {
+  position: absolute;
+  bottom: 3px;
+  height: 13px;
+  border-left: 1px solid #334155;
+  border-right: 1px solid #334155;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.dimension-text {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #1f2937;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 3px;
+  padding: 0 4px;
+  transform: translateY(50%);
+}
+
+.blue-bg {
+  background: linear-gradient(145deg, #1f3a5f, #324b70);
+}
+
+.purple-bg {
+  background: linear-gradient(145deg, #3f4b5b, #4b5563);
+}
+
+.orange-bg {
+  background: linear-gradient(145deg, #5c7263, #6f8475);
+}
 
 .placeholder-text {
-    width: 100%;
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.9em;
+  width: 100%;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: var(--space-2) 0;
 }
 
-/* === MODAL === */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s, visibility 0.3s;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 180ms ease;
 }
 
 .modal-overlay:not(.hidden) {
-    opacity: 1;
-    visibility: visible;
+  opacity: 1;
+  visibility: visible;
 }
 
 .modal-content {
-    background: var(--bg-card);
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 700px;
-    position: relative;
-    max-height: 85vh;
-    overflow-y: auto;
-    transform: scale(0.95);
-    transition: transform 0.3s;
-}
-
-.modal-overlay:not(.hidden) .modal-content {
-    transform: scale(1);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  width: min(95vw, 860px);
+  max-height: 88vh;
+  overflow-y: auto;
+  padding: var(--space-4);
+  position: relative;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.16);
 }
 
 .modal-close-button {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 1.8em;
-    font-weight: 300;
-    color: #aaa;
-    background: none;
-    border: none;
-    cursor: pointer;
-    line-height: 1;
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: none;
+  color: #64748b;
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .modal-close-button:hover {
-    color: var(--text-primary);
-}
-
-.modal-content h2 {
-    font-size: 1.3em;
+  color: #1f2937;
 }
 
 .modal-content p {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    color: var(--text-secondary);
-}
-
-.modal-content h3, .modal-content h4 {
-    color: var(--primary-color);
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
+  color: #475569;
+  margin: 0 0 var(--space-3);
 }
 
 .modal-content ul {
-    padding-left: 20px;
-    list-style: disc;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .modal-content li {
-    margin-bottom: 0.7rem;
+  margin-bottom: 5px;
+  font-size: 0.86rem;
 }
 
-/* Specific styles for PDF Options Modal */
 #pdf-options-modal .modal-content {
-    max-width: 2000px; /* Wider modal for previews */
+  width: min(97vw, 1800px);
+  max-width: none;
 }
 
 #pdf-previews-container {
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    margin: 20px 0;
-    overflow-x: auto; /* Allow horizontal scrolling */
-    padding-bottom: 20px; /* Add space for scrollbar */
-    padding: 10px;
-    background-color: var(--bg-light);
-    border-radius: 6px;
-    border: 1px solid #ddd;
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  overflow-x: auto;
+  padding: var(--space-2);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
 }
 
 .pdf-preview-item {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: white;
-    overflow: hidden; /* Ensure children with radius don't poke out */
-    flex-shrink: 0; /* Prevent items from shrinking */
-    width: 500px; /* Give a fixed width to each preview item */
+  width: 500px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-sm);
 }
 
 .pdf-preview-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 10px 15px;
-    border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--line);
 }
 
 .pdf-preview-header label {
-    font-weight: bold;
-    font-size: 1.1em;
-    margin: 0; /* Reset label margin */
-    cursor: pointer;
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 700;
+  color: #1f2937;
+  cursor: pointer;
 }
 
 .pdf-preview-header input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--primary-color);
-    cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent-blue);
+  cursor: pointer;
 }
 
 .pdf-preview-content-wrapper {
-    height: 200px; /* A fixed height for the thumbnail viewport */
-    overflow: hidden;
-    position: relative; /* Establishes a containing block for the absolute positioned card */
-    background: #f8f9fa;
-    border-top: 1px solid var(--border-color);
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+  background: #f8fafc;
 }
 
 .pdf-preview-item .card {
-    margin-bottom: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    position: absolute; /* Take the card out of the layout flow */
-    /* This scale factor is reduced to ensure that even configurations with a very
-       high aspect ratio (tall and not wide) fit vertically within the fixed-height wrapper. */
-    transform: scale(0.25);
-    transform-origin: top left;
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  position: absolute;
+  transform: scale(0.25);
+  transform-origin: top left;
 }
 
 #generate-selected-pdf-btn {
-    display: block;
-    margin: 20px auto 0;
+  display: block;
+  margin: var(--space-3) auto 0;
 }
 
-/* Utility class to hide elements */
 .hidden {
-    display: none;
+  display: none;
 }
 
-/* === RESPONSIVE === */
 @media (max-width: 1200px) {
-    .three-column-layout {
-        flex-direction: column;
-        align-items: stretch; /* Make cards full width */
-    }
-
-    .compressor-grid {
-        flex-direction: column;
-        gap: 0;
-    }
-}
-
-@media (max-width: 600px) {
-  body {
-    padding: 10px;
-    margin: 10px auto;
-  }
-
-  .card {
-    padding: 15px;
-  }
-
-  h1 {
-    font-size: 1.5em;
+  .three-column-layout {
+    grid-template-columns: 1fr;
   }
 
   .job-info-grid {
-      flex-direction: column;
-      gap: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .job-info-grid .input-group {
-      margin-bottom: 20px;
+  .compressor-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
   }
 }
 
-/* Styles for PDF Export */
+@media (max-width: 680px) {
+  body {
+    padding: var(--space-2);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card {
+    padding: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  .job-info-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .input-group {
+    margin-bottom: var(--space-2);
+  }
+
+  .output-group {
+    flex-wrap: wrap;
+  }
+
+  .export-controls,
+  .pre-visualization-controls {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
 .pdf-export-active .drawing-part {
-    background-image: none !important;
-    background-color: white !important; 
-    /* Applica il bordo su TUTTI e 4 i lati sempre */
-    border: 1px solid black !important; 
-    box-shadow: none !important; 
-    color: black !important; 
+  background-image: none !important;
+  background-color: white !important;
+  border: 1px solid black !important;
+  box-shadow: none !important;
+  color: black !important;
+  text-shadow: none !important;
 }
 
-/* ATTENZIONE: Ho eliminato la regola ".pdf-export-active .drawing-part + .drawing-part"
-  che conteneva "border-left: none !important;". Era quella a far sparire le linee!
-*/
-
-/* Stile per la card esterna */
 .pdf-export-active .card.drawing-container {
-    background-color: white !important;
-    border: 1px solid black !important;
-    box-shadow: none !important; 
+  background-color: white !important;
+  border: 1px solid black !important;
+  box-shadow: none !important;
 }
 
-/* --- SOLUZIONE ALLO SPAZIO VUOTO (GAP) --- */
 .pdf-export-active .parts-container {
-    width: 100% !important;
+  width: 100% !important;
 }
-
-/* --------------------------------------- */
 
 .pdf-checkbox-options {
-    display: none;
+  display: none;
 }
 
 .pdf-export-active .pdf-checkbox-options {
-    display: block;
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid black;
-    font-size: 16px;
-    color: black;
+  display: block;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid black;
+  font-size: 16px;
+  color: black;
 }
 
 .pdf-export-active .pdf-option-line {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    margin-bottom: 5px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 5px;
 }

@@ -22,7 +22,8 @@ const dataQuadri = [
     { typ: "T", L: 2000, H: 1800, W: 500 },
     { typ: "T", L: 2200, H: 1800, W: 500 },
     { typ: "T", L: 2200, H: 2000, W: 500 },
-    { typ: "T", L: 2400, H: 2000, W: 500 }
+    { typ: "T", L: 2400, H: 2000, W: 500 },
+    { typ: "T", L: 2800, H: 2000, W: 500 }
 ];
 
 export default dataQuadri;

@@ -147,7 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 "350+310L": 1400,
                 "350+350L": 1550,
                 "570+350L": 1550,
-                "570+570L": 1600
+                "570+570L": 1600,
+                "2x430L": 2000,
+                "2x1000L": 2000
             };
             baseLength = coupledTankBaseLengths[selectedCoupledVolume] || 0;
 
@@ -211,6 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tanksLengthOutput.textContent = `${finalLength} mm`;
         tanksWidthOutput.textContent = finalLength > 0 ? `${tanksSectionWidth} mm` : '0 mm';
         machineHeightOutput.textContent = `${machineHeight} mm`;
+        updatePanelPreferenceHints();
         updateVisualization();
         updateSumConfigState();
     }
@@ -252,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const typeLtGroup = document.getElementById('type-lt-group');
 
     const oilSeparatorSelect = document.getElementById('oil-separator');
+    const magicCompileOilSeparatorBtn = document.getElementById('magic-compile-oil-separator-btn');
     const heatRecoveriesSelect = document.getElementById('heat-recoveries');
     const lowerDeckLengthOutput = document.getElementById('lower-deck-length');
     const upperDeckLengthOutput = document.getElementById('upper-deck-length');
@@ -374,7 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "BOS4-CDH-1BFO": 600,
             "BOS4-CDH-1NFO": 600,
             "BOS4-CDH-1CFO": 1000,
-            "BOS4-CDH-1DFO": 1000
+            "BOS4-CDH-1DFO": 1000,
+            "2x-BOS4-CDH-1DFO": 2000
         };
 
         if (selectedOilSeparator in oilSeparatorLengths) {
@@ -431,13 +436,87 @@ document.addEventListener('DOMContentLoaded', () => {
     oilSeparatorSelect.addEventListener('change', calculateCompressorsLength);
     heatRecoveriesSelect.addEventListener('change', calculateCompressorsLength);
 
+    function applyMagicCompileOilSeparator() {
+        const numMt = parseInt(numMtSelect.value) || 0;
+        const numAux = parseInt(numAuxSelect.value) || 0;
+        const totalMtAux = numMt + numAux;
+
+        let suggestedModel = "BOS4-CDH-1BFO";
+
+        // Assumption: the "<4" threshold includes 4 to avoid an undefined gap.
+        if (totalMtAux >= 14) {
+            suggestedModel = "2x-BOS4-CDH-1DFO";
+        } else if (totalMtAux >= 7) {
+            suggestedModel = "BOS4-CDH-1DFO";
+        } else if (totalMtAux >= 5) {
+            suggestedModel = "BOS4-CDH-1CFO";
+        } else {
+            suggestedModel = "BOS4-CDH-1BFO";
+        }
+
+        oilSeparatorSelect.value = suggestedModel;
+        calculateCompressorsLength();
+        updateSumConfigState();
+    }
+
+    if (magicCompileOilSeparatorBtn) {
+        magicCompileOilSeparatorBtn.addEventListener('click', applyMagicCompileOilSeparator);
+    }
+
     // --- ELECTRICAL PANEL SECTION ---
     const b2bPanelGroup = document.getElementById('b2b-panel-group');
     const headPanelGroup = document.getElementById('head-panel-group');
     const b2bPanelModelSelect = document.getElementById('b2b-panel-model');
     const headPanelModelSelect = document.getElementById('head-panel-model');
+    const b2bPanelCards = document.getElementById('b2b-panel-cards');
+    const headPanelCards = document.getElementById('head-panel-cards');
     const orientationGroup = document.getElementById('orientation-group');
     const orientationSelect = document.getElementById('electrical-panel-orientation');
+    const magicFillPanelsBtn = document.getElementById('magic-fill-panels-btn');
+
+    function getPanelPreferenceReferenceHeight() {
+        return machineHeight || (parseInt(machineHeightOutput.textContent, 10) || 0);
+    }
+
+    function isPanelPreferredByHeight(panelHeight, referenceHeight) {
+        if (referenceHeight <= 2000) {
+            return panelHeight <= 1800;
+        }
+        return panelHeight === 2000;
+    }
+
+    function updatePanelPreferenceHints() {
+        const referenceHeight = getPanelPreferenceReferenceHeight();
+
+        const refreshSelectState = (selectElement) => {
+            const selectedValue = selectElement.value;
+            const selectedPanel = selectedValue !== '' ? dataQuadri[parseInt(selectedValue, 10)] : null;
+            const selectedPreferred = selectedPanel
+                ? isPanelPreferredByHeight(selectedPanel.H, referenceHeight)
+                : true;
+
+            selectElement.classList.toggle('non-preferred-selection', !selectedPreferred);
+        };
+
+        refreshSelectState(b2bPanelModelSelect);
+        refreshSelectState(headPanelModelSelect);
+
+        const refreshCardsState = (cardsContainer, selectedValue) => {
+            if (!cardsContainer) return;
+            const cardButtons = cardsContainer.querySelectorAll('.panel-card');
+            cardButtons.forEach((card) => {
+                const panelHeight = parseInt(card.dataset.panelHeight, 10) || 0;
+                const preferred = isPanelPreferredByHeight(panelHeight, referenceHeight);
+                const isSelected = card.dataset.optionValue === selectedValue;
+
+                card.classList.toggle('non-preferred', !preferred);
+                card.classList.toggle('selected', isSelected);
+            });
+        };
+
+        refreshCardsState(b2bPanelCards, b2bPanelModelSelect.value);
+        refreshCardsState(headPanelCards, headPanelModelSelect.value);
+    }
 
     function getPanelDimensions(panelType, orientationOverride = null) {
         const isB2B = panelType === 'b2b';
@@ -505,7 +584,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     
-        const canvasWidth = wrapper.getBoundingClientRect().width;
+        // clientWidth excludes borders and avoids tiny overflow with styled wrappers.
+        const canvasWidth = wrapper.clientWidth;
     
         const configuration = document.querySelector('input[name="configuration"]:checked').value;
         const sumConfig = document.querySelector('input[name="sum-config"]:checked').value;
@@ -553,14 +633,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const machinePixelHeight = maxWidth * scale;
         const borderPx = hasCladding ? claddingThickness * scale : 0;
         const walkInPixelHeight = walkInSpace * scale;
-    
-        const wrapperHeight = machinePixelHeight + (borderPx * 2) + walkInPixelHeight;
+
+        // Keep wrapper height aligned with actual rendered borders to avoid vertical overflow/scrollbars.
+        const baseBorderPx = hasCladding ? borderPx : 1;
+        const wrapperHeight = machinePixelHeight + (baseBorderPx * 2) + walkInPixelHeight;
         wrapper.style.height = `${wrapperHeight}px`;
         partsContainer.style.height = `${machinePixelHeight}px`;
         partsContainer.style.width = `${totalLength * scale + totalGapWidth}px`;
     
         if (hasCladding) {
-            wrapper.style.border = `${borderPx}px solid var(--grey-color)`;
+            wrapper.style.border = `${borderPx}px solid var(--line-strong)`;
         }
     
         const createDrawingPart = (name, length, colorClass, widthOverride) => {
@@ -633,8 +715,68 @@ document.addEventListener('DOMContentLoaded', () => {
         overallDimensionsDisplay.classList.remove('hidden');
     }
 
+    function hasAllRequiredSelectionsForVisualization() {
+        const tankType = document.querySelector('input[name="tank-type"]:checked').value;
+        const receiverSelected = tankType === 'single'
+            ? liquidReceiverSelect.value !== ''
+            : coupledLiquidReceiverSelect.value !== '';
+        const mtAccumulatorSelected = mtSuctionAccumulatorSelect.value !== '';
+        const oilSeparatorSelected = oilSeparatorSelect.value !== '';
+        const panelSelected = b2bPanelModelSelect.value !== '' || headPanelModelSelect.value !== '';
+
+        return receiverSelected && mtAccumulatorSelected && oilSeparatorSelected && panelSelected;
+    }
+
+    function renderVisualizationLockedState(elements) {
+        const { wrapper, partsContainer, dimensionsContainer, overallDimensionsDisplay } = elements;
+        partsContainer.innerHTML = '<div class="placeholder-text">Complete all required fields to display 2D visualization.</div>';
+        dimensionsContainer.innerHTML = '';
+        wrapper.style.height = '';
+        overallDimensionsDisplay.classList.add('hidden');
+    }
+
     function updateVisualization() {
         const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
+        const readyForVisualization = hasAllRequiredSelectionsForVisualization();
+
+        const elementsB2B = {
+            wrapper: visualizationWrapperB2B,
+            partsContainer: partsContainerB2B,
+            dimensionsContainer: dimensionsContainerB2B,
+            overallDimensionsDisplay: overallDimensionsDisplayB2B,
+            overallLengthOutput: overallLengthOutputB2B,
+            overallWidthOutput: overallWidthOutputB2B,
+            overallHeightOutput: overallHeightOutputB2B,
+            overallLengthLabel: overallLengthLabelB2B,
+            overallWidthLabel: overallWidthLabelB2B,
+            overallHeightLabel: overallHeightLabelB2B
+        };
+
+        const elementsHeadAligned = {
+            wrapper: visualizationWrapperHeadAligned,
+            partsContainer: partsContainerHeadAligned,
+            dimensionsContainer: dimensionsContainerHeadAligned,
+            overallDimensionsDisplay: overallDimensionsDisplayHeadAligned,
+            overallLengthOutput: overallLengthOutputHeadAligned,
+            overallWidthOutput: overallWidthOutputHeadAligned,
+            overallHeightOutput: overallHeightOutputHeadAligned,
+            overallLengthLabel: overallLengthLabelHeadAligned,
+            overallWidthLabel: overallWidthLabelHeadAligned,
+            overallHeightLabel: overallHeightLabelHeadAligned
+        };
+
+        const elementsHeadPerp = {
+            wrapper: visualizationWrapperHeadPerp,
+            partsContainer: partsContainerHeadPerp,
+            dimensionsContainer: dimensionsContainerHeadPerp,
+            overallDimensionsDisplay: overallDimensionsDisplayHeadPerp,
+            overallLengthOutput: overallLengthOutputHeadPerp,
+            overallWidthOutput: overallWidthOutputHeadPerp,
+            overallHeightOutput: overallHeightOutputHeadPerp,
+            overallLengthLabel: overallLengthLabelHeadPerp,
+            overallWidthLabel: overallWidthLabelHeadPerp,
+            overallHeightLabel: overallHeightLabelHeadPerp
+        };
 
         if (claddingValue === 'no') {
             // For "No" cladding, show THREE visualizations
@@ -646,49 +788,20 @@ document.addEventListener('DOMContentLoaded', () => {
             multiVisualizationContainer.children[1].classList.remove('hidden');
             multiVisualizationContainer.children[2].classList.remove('hidden');
 
+            if (!readyForVisualization) {
+                renderVisualizationLockedState(elementsB2B);
+                renderVisualizationLockedState(elementsHeadAligned);
+                renderVisualizationLockedState(elementsHeadPerp);
+                return;
+            }
+
             // Draw B2B version
-            const elementsB2B = {
-                wrapper: visualizationWrapperB2B,
-                partsContainer: partsContainerB2B,
-                dimensionsContainer: dimensionsContainerB2B,
-                overallDimensionsDisplay: overallDimensionsDisplayB2B,
-                overallLengthOutput: overallLengthOutputB2B,
-                overallWidthOutput: overallWidthOutputB2B,
-                overallHeightOutput: overallHeightOutputB2B,
-                overallLengthLabel: overallLengthLabelB2B,
-                overallWidthLabel: overallWidthLabelB2B,
-                overallHeightLabel: overallHeightLabelB2B
-            };
             drawMachineVisualization(elementsB2B, 'b2b');
 
             // Draw Head ALIGNED version
-            const elementsHeadAligned = {
-                wrapper: visualizationWrapperHeadAligned,
-                partsContainer: partsContainerHeadAligned,
-                dimensionsContainer: dimensionsContainerHeadAligned,
-                overallDimensionsDisplay: overallDimensionsDisplayHeadAligned,
-                overallLengthOutput: overallLengthOutputHeadAligned,
-                overallWidthOutput: overallWidthOutputHeadAligned,
-                overallHeightOutput: overallHeightOutputHeadAligned,
-                overallLengthLabel: overallLengthLabelHeadAligned,
-                overallWidthLabel: overallWidthLabelHeadAligned,
-                overallHeightLabel: overallHeightLabelHeadAligned
-            };
             drawMachineVisualization(elementsHeadAligned, 'head', 'aligned');
 
             // Draw Head PERPENDICULAR version
-            const elementsHeadPerp = {
-                wrapper: visualizationWrapperHeadPerp,
-                partsContainer: partsContainerHeadPerp,
-                dimensionsContainer: dimensionsContainerHeadPerp,
-                overallDimensionsDisplay: overallDimensionsDisplayHeadPerp,
-                overallLengthOutput: overallLengthOutputHeadPerp,
-                overallWidthOutput: overallWidthOutputHeadPerp,
-                overallHeightOutput: overallHeightOutputHeadPerp,
-                overallLengthLabel: overallLengthLabelHeadPerp,
-                overallWidthLabel: overallWidthLabelHeadPerp,
-                overallHeightLabel: overallHeightLabelHeadPerp
-            };
             drawMachineVisualization(elementsHeadPerp, 'head', 'perpendicular');
 
         } else {
@@ -701,31 +814,18 @@ document.addEventListener('DOMContentLoaded', () => {
             multiVisualizationContainer.children[1].classList.remove('hidden');
             multiVisualizationContainer.children[2].classList.add('hidden');
 
+            if (!readyForVisualization) {
+                renderVisualizationLockedState(elementsB2B);
+                renderVisualizationLockedState(elementsHeadAligned);
+                return;
+            }
+
             // Draw B2B version
-            const elementsB2B = {
-                wrapper: visualizationWrapperB2B,
-                partsContainer: partsContainerB2B,
-                dimensionsContainer: dimensionsContainerB2B,
-                overallDimensionsDisplay: overallDimensionsDisplayB2B,
-                overallLengthOutput: overallLengthOutputB2B,
-                overallWidthOutput: overallWidthOutputB2B,
-                overallHeightOutput: overallHeightOutputB2B,
-                overallLengthLabel: overallLengthLabelB2B,
-                overallWidthLabel: overallWidthLabelB2B,
-                overallHeightLabel: overallHeightLabelB2B
-            };
             drawMachineVisualization(elementsB2B, 'b2b');
 
             // Draw Head version (respecting the disabled 'aligned' state)
             // The target for this is the "head-aligned" container
-            const elementsHead = {
-                wrapper: visualizationWrapperHeadAligned, partsContainer: partsContainerHeadAligned, dimensionsContainer: dimensionsContainerHeadAligned,
-                overallDimensionsDisplay: overallDimensionsDisplayHeadAligned, overallLengthOutput: overallLengthOutputHeadAligned, overallWidthOutput: overallWidthOutputHeadAligned, overallHeightOutput: overallHeightOutputHeadAligned,
-                overallLengthLabel: overallLengthLabelHeadAligned,
-                overallWidthLabel: overallWidthLabelHeadAligned,
-                overallHeightLabel: overallHeightLabelHeadAligned
-            };
-            drawMachineVisualization(elementsHead, 'head'); // No override, uses select value which is forced to 'aligned'
+            drawMachineVisualization(elementsHeadAligned, 'head'); // No override, uses select value which is forced to 'aligned'
         }
     }
 
@@ -786,7 +886,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dataQuadri.forEach((panel, index) => {
             const option = document.createElement('option');
             option.value = index;
-            option.textContent = `${panel.L}x${panel.H}x${panel.W}`;
+            option.textContent = `L=${panel.L}, W=${panel.W}, H=${panel.H}`;
             
             if (panel.typ === 'B2B') {
                 b2bPanelModelSelect.appendChild(option);
@@ -797,6 +897,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         b2bPanelModelSelect.value = prevB2B;
         headPanelModelSelect.value = prevHead;
+        renderPanelCards();
+        updatePanelPreferenceHints();
 
         if (b2bPanelModelSelect.value !== prevB2B || headPanelModelSelect.value !== prevHead) {
             updateVisualization();
@@ -825,17 +927,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handlePanelChange() {
         updatePanelOrientationState();
+        updatePanelPreferenceHints();
         updateVisualization();
         updateSumConfigState();
+        updateCompletionHints();
+    }
+
+    function renderPanelCards() {
+        const buildCards = (selectElement, container, title) => {
+            if (!container) return;
+            container.innerHTML = '';
+
+            const groupedByHeight = new Map();
+            Array.from(selectElement.options).forEach((option) => {
+                if (option.value === '') return;
+                const panel = dataQuadri[parseInt(option.value, 10)];
+                if (!panel) return;
+                if (!groupedByHeight.has(panel.H)) {
+                    groupedByHeight.set(panel.H, []);
+                }
+                groupedByHeight.get(panel.H).push({ option, panel });
+            });
+
+            Array.from(groupedByHeight.keys())
+                .sort((a, b) => a - b)
+                .forEach((height) => {
+                    const group = document.createElement('div');
+                    group.className = 'panel-height-group';
+
+                    const label = document.createElement('div');
+                    label.className = 'panel-height-label';
+                    label.textContent = `H ${height} mm`;
+
+                    const row = document.createElement('div');
+                    row.className = 'panel-height-row';
+
+                    groupedByHeight.get(height).forEach(({ option, panel }) => {
+                        const card = document.createElement('button');
+                        card.type = 'button';
+                        card.className = 'panel-card';
+                        card.dataset.optionValue = option.value;
+                        card.dataset.panelHeight = panel.H;
+                        card.innerHTML = `<span class="panel-title">${title}</span><span class="panel-dims">L=${panel.L}, W=${panel.W}, H=${panel.H}</span>`;
+
+                        card.addEventListener('click', () => {
+                            selectElement.value = option.value;
+                            handlePanelChange();
+                        });
+
+                        row.appendChild(card);
+                    });
+
+                    group.appendChild(label);
+                    group.appendChild(row);
+                    container.appendChild(group);
+                });
+        };
+
+        buildCards(b2bPanelModelSelect, b2bPanelCards, 'B2B');
+        buildCards(headPanelModelSelect, headPanelCards, 'Head');
+    }
+
+    function applyMagicFillPanels() {
+        const referenceHeight = getPanelPreferenceReferenceHeight();
+
+        const pickPreferredOption = (selectElement) => {
+            const preferredOption = Array.from(selectElement.options).find((option) => {
+                if (option.value === '') return false;
+                const panel = dataQuadri[parseInt(option.value, 10)];
+                return panel && isPanelPreferredByHeight(panel.H, referenceHeight);
+            });
+
+            if (preferredOption) {
+                selectElement.value = preferredOption.value;
+            }
+        };
+
+        pickPreferredOption(b2bPanelModelSelect);
+        pickPreferredOption(headPanelModelSelect);
+        handlePanelChange();
+    }
+
+    function setFieldRequiredHint(field, isRequired, isMissing) {
+        if (!field) return;
+        const inputGroup = field.closest('.input-group');
+        const shouldHighlight = isRequired && isMissing;
+
+        field.classList.toggle('needs-input', shouldHighlight);
+        if (inputGroup) {
+            inputGroup.classList.toggle('needs-input', shouldHighlight);
+        }
+    }
+
+    function updateCompletionHints() {
+        const tankType = document.querySelector('input[name="tank-type"]:checked').value;
+        const isSingle = tankType === 'single';
+
+        setFieldRequiredHint(liquidReceiverSelect, isSingle, liquidReceiverSelect.value === '');
+        setFieldRequiredHint(coupledLiquidReceiverSelect, !isSingle, coupledLiquidReceiverSelect.value === '');
+        setFieldRequiredHint(mtSuctionAccumulatorSelect, true, mtSuctionAccumulatorSelect.value === '');
+        setFieldRequiredHint(oilSeparatorSelect, true, oilSeparatorSelect.value === '');
+
+        const noPanelSelected = b2bPanelModelSelect.value === '' && headPanelModelSelect.value === '';
+        setFieldRequiredHint(b2bPanelModelSelect, true, noPanelSelected);
+        setFieldRequiredHint(headPanelModelSelect, true, noPanelSelected);
     }
 
     b2bPanelModelSelect.addEventListener('change', handlePanelChange);
     headPanelModelSelect.addEventListener('change', handlePanelChange);
     orientationSelect.addEventListener('change', handlePanelChange);
+    if (magicFillPanelsBtn) {
+        magicFillPanelsBtn.addEventListener('click', applyMagicFillPanels);
+    }
 
     function handleConfigurationChange() {
         calculateTanksLength();
         calculateCompressorsLength();
+        updateCompletionHints();
     }
 
     function handleCladdingChange() {
@@ -848,7 +1056,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasCladding) {
             // If cladding is present, force "One Part" and disable the "Two Parts" option.
             twoPartsRadio.disabled = true;
-            showConfigOptionsBtn.disabled = true;
+            showConfigOptionsBtn.disabled = false;
+            showConfigOptionsBtn.title = 'With cladding active, configuration is forced to One Part.';
             // If not already one part, switch to it
             if (!onePartRadio.checked) {
                 onePartRadio.checked = true;
@@ -859,6 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // If cladding is not present, re-enable the "Two Parts" option.
             twoPartsRadio.disabled = false;
             showConfigOptionsBtn.disabled = false;
+            showConfigOptionsBtn.title = '';
             // Default to "Two Parts" if not already selected
             if (!twoPartsRadio.checked) {
                 twoPartsRadio.checked = true;
@@ -869,7 +1079,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Check if this change affects panel orientation
         updatePanelOrientationState();
         updateSumConfigState();
-    calculateTanksLength(); // Recalculates tanks length/height and calls updateVisualization
+        calculateTanksLength(); // Recalculates tanks length/height and calls updateVisualization
+        updateCompletionHints();
     }
 
     // --- GENERAL CONFIG LISTENERS ---
@@ -892,6 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     populatePanelSelectors();
     handlePanelChange();
     handleCladdingChange(); // Set initial state for cladding-dependent options
+    updateCompletionHints();
 
     // --- MODAL LOGIC (Config Options) ---
     showConfigOptionsBtn.addEventListener('click', () => {
@@ -946,6 +1158,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // because their calculation functions will run and overwrite the display.
                 currentMachineWidth = 1200;
             }
+
+            updateCompletionHints();
         });
     }
 
@@ -957,12 +1171,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const manualTanksLength = document.getElementById('manual-tanks-length');
     const manualCompressorsLength = document.getElementById('manual-compressors-length');
     const manualMachineWidth = document.getElementById('manual-machine-width');
+    const manualMachineHeight = document.getElementById('manual-machine-height');
 
     showOverrideBtn.addEventListener('click', () => {
         // Populate modal with current values before showing
         manualTanksLength.value = parseInt(tanksLengthOutput.textContent) || '';
         manualCompressorsLength.value = parseInt(compressorsLengthOutput.textContent) || '';
         manualMachineWidth.value = currentMachineWidth;
+        manualMachineHeight.value = machineHeight;
         overrideModal.classList.remove('hidden');
     });
 
@@ -981,6 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newTanksLength = parseInt(manualTanksLength.value);
         const newCompressorsLength = parseInt(manualCompressorsLength.value);
         const newWidth = parseInt(manualMachineWidth.value);
+        const newHeight = parseInt(manualMachineHeight.value);
 
         let overrideApplied = false;
 
@@ -997,11 +1214,17 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMachineWidth = newWidth;
             overrideApplied = true;
         }
+        if (!isNaN(newHeight) && newHeight >= 0) {
+            machineHeight = newHeight;
+            machineHeightOutput.textContent = `${machineHeight} mm`;
+            overrideApplied = true;
+        }
 
         if (overrideApplied) {
             isManualOverrideActive = true;
         }
 
+        updatePanelPreferenceHints();
         // Redraw and close
         updateVisualization();
         closeOverrideModal();
@@ -1041,6 +1264,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function getOutputValue(id) {
         const element = document.getElementById(id);
         return element ? element.textContent : 'N/A';
+    }
+
+    function buildPdfFileName() {
+        const jobNameInput = document.getElementById('job-name');
+        const offerNumberInput = document.getElementById('offer-number');
+
+        const rawJobName = jobNameInput ? jobNameInput.value.trim() : '';
+        const rawOfferNumber = offerNumberInput ? offerNumberInput.value.trim() : '';
+
+        const baseName = rawJobName || rawOfferNumber || 'Project';
+        const sanitizedBaseName = baseName
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+            .replace(/\s+/g, '_')
+            .replace(/_+/g, '_')
+            .replace(/^[._-]+|[._-]+$/g, '');
+
+        const finalBaseName = sanitizedBaseName || 'Project';
+        return `Preliminary_Dimensions_${finalBaseName}.pdf`;
     }
 
     function generateSummaryText() {
@@ -1334,7 +1575,7 @@ Electrical Panel
                     imageY = addImageToPdf(canvas, imageY);
                 });
 
-                doc.save('Machine_Configurator_Summary.pdf');
+                doc.save(buildPdfFileName());
             };
 
             Promise.all(promises).then(addImagesAndSave).catch(err => {
