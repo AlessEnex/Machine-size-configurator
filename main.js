@@ -55,6 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const showConfigOptionsBtn = document.getElementById('show-config-options-btn');
     const closeConfigOptionsBtn = document.getElementById('close-config-options-btn');
     const configOptionsModal = document.getElementById('config-options-modal');
+    const configOptionsDisabled = true;
+
+    if (showConfigOptionsBtn) {
+        showConfigOptionsBtn.disabled = true;
+        showConfigOptionsBtn.setAttribute('aria-disabled', 'true');
+        showConfigOptionsBtn.title = 'Advanced options are currently disabled.';
+    }
 
     // --- TANKS SECTION ---
     const tankTypeRadios = document.querySelectorAll('input[name="tank-type"]');
@@ -1237,8 +1244,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasCladding) {
             // If cladding is present, force "One Part" and disable the "Two Parts" option.
             twoPartsRadio.disabled = true;
-            showConfigOptionsBtn.disabled = false;
-            showConfigOptionsBtn.title = 'With cladding active, configuration is forced to One Part.';
+            if (!configOptionsDisabled) {
+                showConfigOptionsBtn.disabled = false;
+                showConfigOptionsBtn.title = 'With cladding active, configuration is forced to One Part.';
+            }
             // If not already one part, switch to it
             if (!onePartRadio.checked) {
                 onePartRadio.checked = true;
@@ -1248,8 +1257,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // If cladding is not present, re-enable the "Two Parts" option.
             twoPartsRadio.disabled = false;
-            showConfigOptionsBtn.disabled = false;
-            showConfigOptionsBtn.title = '';
+            if (!configOptionsDisabled) {
+                showConfigOptionsBtn.disabled = false;
+                showConfigOptionsBtn.title = '';
+            }
             // Default to "Two Parts" if not already selected
             if (!twoPartsRadio.checked) {
                 twoPartsRadio.checked = true;
@@ -1287,9 +1298,12 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCompletionHints();
 
     // --- MODAL LOGIC (Config Options) ---
-    showConfigOptionsBtn.addEventListener('click', () => {
-        configOptionsModal.classList.remove('hidden');
-    });
+    if (!configOptionsDisabled) {
+        showConfigOptionsBtn.addEventListener('click', () => {
+            if (showConfigOptionsBtn.disabled) return;
+            configOptionsModal.classList.remove('hidden');
+        });
+    }
 
     closeConfigOptionsBtn.addEventListener('click', () => {
         configOptionsModal.classList.add('hidden');
