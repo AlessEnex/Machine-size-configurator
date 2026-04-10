@@ -1002,6 +1002,13 @@ select.non-preferred-selection {
   text-shadow: none !important;
 }
 
+.pdf-export-active .part-dimensions {
+  color: black !important;
+  background: white !important;
+  padding: 0 3px;
+  text-shadow: none !important;
+}
+
 .pdf-export-active .drawing-wrapper,
 .pdf-export-active .side-view-wrapper {
   background-color: white !important;

@@ -1831,10 +1831,12 @@ Electrical Panel
             const addImagesAndSave = (canvases) => {
                 // --- Disclaimer Logic ---
                 const disclaimerTitle = "Disclaimer";
-                const disclaimerText = "The measurements below are indicative and are intended to help in choosing the machine configuration. If the measurements are not satisfactory, please request a custom quotation. Please note that if no option is selected below, we will choose the configuration that best suits our needs.";
+                const disclaimerTextEn = "The measurements below are indicative and are intended to help in choosing the machine configuration. If the measurements are not satisfactory, please request a custom quotation. Please note that if no option is selected below, we will choose the configuration that best suits our needs.";
+                const disclaimerTextFr = "Les mesures ci-dessous sont indicatives et sont destinées à aider au choix de la configuration de la machine. Si les mesures ne sont pas satisfaisantes, veuillez demander un devis personnalisé. Veuillez noter que si aucune option n’est sélectionnée ci-dessous, nous choisirons la configuration qui correspond le mieux à nos besoins.";
                 const disclaimerTitleLines = doc.splitTextToSize(disclaimerTitle, contentWidth);
-                const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth);
-                const disclaimerHeight = (disclaimerTitleLines.length + disclaimerLines.length) * lineHeight;
+                const disclaimerLinesEn = doc.splitTextToSize(disclaimerTextEn, contentWidth);
+                const disclaimerLinesFr = doc.splitTextToSize(disclaimerTextFr, contentWidth);
+                const disclaimerHeight = (disclaimerTitleLines.length + disclaimerLinesEn.length + disclaimerLinesFr.length) * lineHeight;
 
                 // --- Suggestions Logic ---
                 const suggestionsTitle = "Customer Suggestions";
@@ -1861,8 +1863,13 @@ Electrical Panel
                 currentY += disclaimerTitleLines.length * lineHeight;
 
                 doc.setFont(undefined, 'italic');
-                doc.text(disclaimerLines, margin, currentY);
-                currentY += disclaimerLines.length * lineHeight;
+                doc.text(disclaimerLinesEn, margin, currentY);
+                currentY += disclaimerLinesEn.length * lineHeight;
+                currentY += 2;
+
+                doc.setFont(undefined, 'italic');
+                doc.text(disclaimerLinesFr, margin, currentY);
+                currentY += disclaimerLinesFr.length * lineHeight;
 
                 // Write suggestions
                 currentY += 5; // Add a bit of space between sections
