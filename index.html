@@ -75,11 +75,11 @@
                 </div>
                 <div class="card grey-t text-center">
                     <h2>Machine Configuration</h2>
-                    <button id="show-config-options-btn" class="info-button">Advanced Options</button>
+                    <button id="show-config-options-btn" class="info-button" disabled>Advanced Options</button>
                 </div>
             </div>
 
-            <div class="card blue-t">
+            <div class="card blue-t" id="card-tanks">
                 <h2>Tanks</h2>
 
                 <div class="input-group">
@@ -168,7 +168,7 @@
                 </div>
             </div>
 
-            <div class="card purple-t">
+            <div class="card purple-t" id="card-compressors">
             <h2>Compressors</h2>
 
             <div class="compressor-grid">
@@ -330,7 +330,7 @@
         </div>
         </div>
 
-        <div class="card orange-t">
+        <div class="card orange-t" id="card-panels">
             <h2>Electrical Panel</h2>
             <div class="pre-visualization-controls">
                 <button id="magic-fill-panels-btn" type="button" class="info-button icon-only-btn" title="Magic Fill Panels" aria-label="Magic Fill Panels">
@@ -390,12 +390,18 @@
 
         <div class="pre-visualization-controls">
             <button id="show-override-btn" class="info-button">Manual Override</button>
+            <span id="override-active-indicator" class="override-indicator hidden">Manuale attivo</span>
         </div>
 
         <div id="single-visualization-container" class="card drawing-container">
             <h2>2D Visualization</h2>
+            <div class="view-label">Top view</div>
             <div class="drawing-wrapper" id="visualization-wrapper">
                 <div class="parts-container" id="parts-container"></div>
+            </div>
+            <div class="view-label">Front view</div>
+            <div class="side-view-wrapper" id="side-view-wrapper">
+                <div class="side-view-container" id="side-view-container"></div>
             </div>
             <div class="dimensions-container" id="dimensions-container"></div>
             <div id="overall-dimensions-display" class="hidden">
@@ -418,8 +424,13 @@
         <div id="multi-visualization-container" class="hidden">
             <div class="card drawing-container">
                 <h2>2D Visualization (with B2B Panel)</h2>
+                <div class="view-label">Top view</div>
                 <div class="drawing-wrapper" id="visualization-wrapper-b2b">
                     <div class="parts-container" id="parts-container-b2b"></div>
+                </div>
+                <div class="view-label">Front view</div>
+                <div class="side-view-wrapper" id="side-view-wrapper-b2b">
+                    <div class="side-view-container" id="side-view-container-b2b"></div>
                 </div>
                 <div class="dimensions-container" id="dimensions-container-b2b"></div>
                 <div class="overall-dimensions-display" id="overall-dimensions-display-b2b">
@@ -441,8 +452,13 @@
 
             <div class="card drawing-container">
                 <h2>2D Visualization (with Head Panel - Aligned)</h2>
+                <div class="view-label">Top view</div>
                 <div class="drawing-wrapper" id="visualization-wrapper-head-aligned">
                     <div class="parts-container" id="parts-container-head-aligned"></div>
+                </div>
+                <div class="view-label">Front view</div>
+                <div class="side-view-wrapper" id="side-view-wrapper-head-aligned">
+                    <div class="side-view-container" id="side-view-container-head-aligned"></div>
                 </div>
                 <div class="dimensions-container" id="dimensions-container-head-aligned"></div>
                 <div class="overall-dimensions-display" id="overall-dimensions-display-head-aligned">
@@ -464,8 +480,13 @@
 
             <div class="card drawing-container">
                 <h2>2D Visualization (with Head Panel - Perpendicular)</h2>
+                <div class="view-label">Top view</div>
                 <div class="drawing-wrapper" id="visualization-wrapper-head-perp">
                     <div class="parts-container" id="parts-container-head-perp"></div>
+                </div>
+                <div class="view-label">Front view</div>
+                <div class="side-view-wrapper" id="side-view-wrapper-head-perp">
+                    <div class="side-view-container" id="side-view-container-head-perp"></div>
                 </div>
                 <div class="dimensions-container" id="dimensions-container-head-perp"></div>
                 <div class="overall-dimensions-display" id="overall-dimensions-display-head-perp">
@@ -595,26 +616,78 @@
                 
                 <p>Enter values below to manually override the calculated dimensions. Changes are temporary and will be reset if you modify the options above.</p>
 
-                <div class="input-group">
-                    <label for="manual-tanks-length">Tanks Section Length (mm)</label>
-                    <input type="number" id="manual-tanks-length" placeholder="e.g., 3500" min="0">
-                </div>
+                <div class="override-grid">
+                    <div class="override-section">
+                        <div class="override-title">Serbatoi</div>
+                        <div class="input-group">
+                            <label for="manual-tanks-length">Tanks Section Length (mm)</label>
+                            <input type="number" id="manual-tanks-length" placeholder="e.g., 3500" min="0">
+                        </div>
 
-                <div class="input-group">
-                    <label for="manual-compressors-length">Compressors Section Length (mm)</label>
-                    <input type="number" id="manual-compressors-length" placeholder="e.g., 4200" min="0">
-                </div>
+                        <div class="input-group">
+                            <label for="manual-tanks-width">Tanks Section Width (mm)</label>
+                            <input type="number" id="manual-tanks-width" placeholder="e.g., 1200" min="0">
+                        </div>
 
-                <hr class="section-separator">
+                        <div class="input-group">
+                            <label for="manual-tanks-height">Tanks Section Height (mm)</label>
+                            <input type="number" id="manual-tanks-height" placeholder="e.g., 2300" min="0">
+                        </div>
+                    </div>
 
-                <div class="input-group">
-                    <label for="manual-machine-width">Overall Machine Width (mm)</label>
-                    <input type="number" id="manual-machine-width" placeholder="e.g., 1000" min="0">
-                </div>
+                    <div class="override-section">
+                        <div class="override-title">Compressori</div>
+                        <div class="input-group">
+                            <label for="manual-compressors-length">Compressors Section Length (mm)</label>
+                            <input type="number" id="manual-compressors-length" placeholder="e.g., 4200" min="0">
+                        </div>
 
-                <div class="input-group">
-                    <label for="manual-machine-height">Overall Machine Height (mm)</label>
-                    <input type="number" id="manual-machine-height" placeholder="e.g., 2300" min="0">
+                        <div class="input-group">
+                            <label for="manual-compressors-width">Compressors Section Width (mm)</label>
+                            <input type="number" id="manual-compressors-width" placeholder="e.g., 1100" min="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="manual-compressors-height">Compressors Section Height (mm)</label>
+                            <input type="number" id="manual-compressors-height" placeholder="e.g., 2300" min="0">
+                        </div>
+                    </div>
+
+                    <div class="override-section">
+                        <div class="override-title">Quadro elettrico di testa</div>
+                        <div class="input-group">
+                            <label for="manual-head-length">Head Panel Length (mm)</label>
+                            <input type="number" id="manual-head-length" placeholder="e.g., 1800" min="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="manual-head-width">Head Panel Width (mm)</label>
+                            <input type="number" id="manual-head-width" placeholder="e.g., 500" min="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="manual-head-height">Head Panel Height (mm)</label>
+                            <input type="number" id="manual-head-height" placeholder="e.g., 1800" min="0">
+                        </div>
+                    </div>
+
+                    <div class="override-section">
+                        <div class="override-title">Quadro elettrico B2B</div>
+                        <div class="input-group">
+                            <label for="manual-b2b-length">B2B Panel Length (mm)</label>
+                            <input type="number" id="manual-b2b-length" placeholder="e.g., 1000" min="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="manual-b2b-width">B2B Panel Width (mm)</label>
+                            <input type="number" id="manual-b2b-width" placeholder="e.g., 800" min="0">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="manual-b2b-height">B2B Panel Height (mm)</label>
+                            <input type="number" id="manual-b2b-height" placeholder="e.g., 1800" min="0">
+                        </div>
+                    </div>
                 </div>
 
                 <button id="apply-override-btn" class="info-button">Apply Changes</button>

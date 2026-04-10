@@ -1,5 +1,11 @@
 // main.js
 import dataQuadri from './electricalPanelData.js';
+import {
+    getPanelAreaM2,
+    getLiquidReceiverVolume,
+    isPanelRecommendedByReceiverVolume,
+    getPanelAreaLimitByReceiverVolume
+} from './electricalPanelRules.js';
 
 // Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,6 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let machineHeight = 0; // Global variable for machine height
     let tanksSectionWidth = 1200; // Global variable for tanks section width
     let isManualOverrideActive = false; // Flag to track if override is active
+    const manualOverrides = {
+        tanks: { width: null, height: null },
+        compressors: { width: null, height: null },
+        head: { length: null, width: null, height: null },
+        b2b: { length: null, width: null, height: null }
+    };
+
+    function getOverrideValue(value) {
+        return Number.isFinite(value) && value > 0 ? value : null;
+    }
 
     // --- GENERAL CONFIG ---
     const configurationRadios = document.querySelectorAll('input[name="configuration"]');
@@ -52,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tanksLengthOutput = document.getElementById('tanks-length');
     const tanksWidthOutput = document.getElementById('tanks-width');
     const machineHeightOutput = document.getElementById('machine-height');
+    const tanksCard = document.getElementById('card-tanks');
+    const compressorsCard = document.getElementById('card-compressors');
+    const panelsCard = document.getElementById('card-panels');
 
     function getGeneralConfig() {
         const configuration = document.querySelector('input[name="configuration"]:checked').value;
@@ -269,6 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SINGLE VISUALIZATION ELEMENTS ---
     const visualizationWrapper = document.getElementById('visualization-wrapper');
     const partsContainer = document.getElementById('parts-container');
+    const sideViewWrapper = document.getElementById('side-view-wrapper');
+    const sideViewContainer = document.getElementById('side-view-container');
     const dimensionsContainer = document.getElementById('dimensions-container');
     const overallDimensionsDisplay = document.getElementById('overall-dimensions-display');
     const overallLengthOutput = document.getElementById('overall-length-output');
@@ -278,6 +299,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DUAL VISUALIZATION ELEMENTS (B2B) ---
     const visualizationWrapperB2B = document.getElementById('visualization-wrapper-b2b');
     const partsContainerB2B = document.getElementById('parts-container-b2b');
+    const sideViewWrapperB2B = document.getElementById('side-view-wrapper-b2b');
+    const sideViewContainerB2B = document.getElementById('side-view-container-b2b');
     const dimensionsContainerB2B = document.getElementById('dimensions-container-b2b');
     const overallDimensionsDisplayB2B = document.getElementById('overall-dimensions-display-b2b');
     const overallLengthOutputB2B = document.getElementById('overall-length-output-b2b');
@@ -290,6 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DUAL VISUALIZATION ELEMENTS (HEAD) ---
     const visualizationWrapperHeadAligned = document.getElementById('visualization-wrapper-head-aligned');
     const partsContainerHeadAligned = document.getElementById('parts-container-head-aligned');
+    const sideViewWrapperHeadAligned = document.getElementById('side-view-wrapper-head-aligned');
+    const sideViewContainerHeadAligned = document.getElementById('side-view-container-head-aligned');
     const dimensionsContainerHeadAligned = document.getElementById('dimensions-container-head-aligned');
     const overallDimensionsDisplayHeadAligned = document.getElementById('overall-dimensions-display-head-aligned');
     const overallLengthOutputHeadAligned = document.getElementById('overall-length-output-head-aligned');
@@ -302,6 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NEW VISUALIZATION ELEMENTS (HEAD - PERP) ---
     const visualizationWrapperHeadPerp = document.getElementById('visualization-wrapper-head-perp');
     const partsContainerHeadPerp = document.getElementById('parts-container-head-perp');
+    const sideViewWrapperHeadPerp = document.getElementById('side-view-wrapper-head-perp');
+    const sideViewContainerHeadPerp = document.getElementById('side-view-container-head-perp');
     const dimensionsContainerHeadPerp = document.getElementById('dimensions-container-head-perp');
     const overallDimensionsDisplayHeadPerp = document.getElementById('overall-dimensions-display-head-perp');
     const overallLengthOutputHeadPerp = document.getElementById('overall-length-output-head-perp');
@@ -474,28 +501,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const orientationSelect = document.getElementById('electrical-panel-orientation');
     const magicFillPanelsBtn = document.getElementById('magic-fill-panels-btn');
 
-    function getPanelPreferenceReferenceHeight() {
-        return machineHeight || (parseInt(machineHeightOutput.textContent, 10) || 0);
-    }
-
-    function isPanelPreferredByHeight(panelHeight, referenceHeight) {
-        if (referenceHeight <= 2000) {
-            return panelHeight <= 1800;
-        }
-        return panelHeight === 2000;
-    }
-
     function updatePanelPreferenceHints() {
-        const referenceHeight = getPanelPreferenceReferenceHeight();
-
         const refreshSelectState = (selectElement) => {
-            const selectedValue = selectElement.value;
-            const selectedPanel = selectedValue !== '' ? dataQuadri[parseInt(selectedValue, 10)] : null;
-            const selectedPreferred = selectedPanel
-                ? isPanelPreferredByHeight(selectedPanel.H, referenceHeight)
-                : true;
-
-            selectElement.classList.toggle('non-preferred-selection', !selectedPreferred);
+            selectElement.classList.remove('non-preferred-selection');
         };
 
         refreshSelectState(b2bPanelModelSelect);
@@ -505,11 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!cardsContainer) return;
             const cardButtons = cardsContainer.querySelectorAll('.panel-card');
             cardButtons.forEach((card) => {
-                const panelHeight = parseInt(card.dataset.panelHeight, 10) || 0;
-                const preferred = isPanelPreferredByHeight(panelHeight, referenceHeight);
                 const isSelected = card.dataset.optionValue === selectedValue;
-
-                card.classList.toggle('non-preferred', !preferred);
                 card.classList.toggle('selected', isSelected);
             });
         };
@@ -529,15 +533,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const panelData = dataQuadri[selectedIndex];
         if (!panelData) return { length: 0, width: 0 };
+        const panelOverrides = isB2B ? manualOverrides.b2b : manualOverrides.head;
+        const overrideWidth = getOverrideValue(panelOverrides.width);
+        const overrideLength = getOverrideValue(panelOverrides.length);
+        const panelWidth = overrideWidth ?? panelData.W;
+        const panelLength = overrideLength ?? panelData.L;
 
         // The orientation option is only available for 'T' type panels (which are 'head' panels)
         if (!isB2B && panelData.typ === 'T' && orientation === 'perpendicular') {
             // Rotated
-            return { length: panelData.W, width: panelData.L };
+            return { length: panelWidth, width: panelLength };
         } else {
             // Aligned or B2B
-            return { length: panelData.L, width: panelData.W };
+            return { length: panelLength, width: panelWidth };
         }
+    }
+
+    function getPanelHeight(panelType) {
+        const isB2B = panelType === 'b2b';
+        const selectedIndex = isB2B ? b2bPanelModelSelect.value : headPanelModelSelect.value;
+        const overrideHeight = getOverrideValue(isB2B ? manualOverrides.b2b.height : manualOverrides.head.height);
+        if (overrideHeight) return overrideHeight;
+        if (selectedIndex === "") return 0;
+        const panelData = dataQuadri[selectedIndex];
+        return panelData ? panelData.H : 0;
     }
 
     function calculatePanelLengths() {
@@ -548,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- VISUALIZATION ---
     function drawMachineVisualization(elements, panelType, orientationOverride = null) {
         const {
-            wrapper, partsContainer, dimensionsContainer,
+            wrapper, partsContainer, sideWrapper, sidePartsContainer, dimensionsContainer,
             overallDimensionsDisplay, overallLengthOutput, overallWidthOutput, overallHeightOutput,
             overallLengthLabel, overallWidthLabel, overallHeightLabel
         } = elements;
@@ -572,11 +591,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const alignPanelTop = isHeadPanelAligned;
     
         partsContainer.innerHTML = '';
+        if (sidePartsContainer) sidePartsContainer.innerHTML = '';
         dimensionsContainer.innerHTML = '';
     
         wrapper.style.padding = '0';
         wrapper.style.backgroundColor = '';
         wrapper.style.border = '';
+        if (sideWrapper) {
+            sideWrapper.style.padding = '0';
+            sideWrapper.style.backgroundColor = '';
+            sideWrapper.style.border = '';
+            sideWrapper.style.height = '';
+        }
         overallDimensionsDisplay.classList.add('hidden');
     
         if (totalLength === 0) {
@@ -591,9 +617,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const sumConfig = document.querySelector('input[name="sum-config"]:checked').value;
         const gapSize = 20;
     
+        const hasManualSectionWidth = getOverrideValue(manualOverrides.tanks.width) !== null ||
+            getOverrideValue(manualOverrides.compressors.width) !== null;
+        const tanksWidth = hasManualSectionWidth
+            ? (getOverrideValue(manualOverrides.tanks.width) ?? tanksSectionWidth)
+            : finalSharedWidth;
+        const compressorsWidth = hasManualSectionWidth
+            ? (getOverrideValue(manualOverrides.compressors.width) ?? currentMachineWidth)
+            : finalSharedWidth;
+
         const parts = [];
-        if (tanksLength > 0) parts.push({ name: 'Tanks', length: tanksLength, color: 'blue-bg', width: finalSharedWidth });
-        if (compressorsLength > 0) parts.push({ name: 'Compressors', length: compressorsLength, color: 'purple-bg', width: finalSharedWidth });
+        if (tanksLength > 0) parts.push({ name: 'Tanks', length: tanksLength, color: 'blue-bg', width: tanksWidth });
+        if (compressorsLength > 0) parts.push({ name: 'Compressors', length: compressorsLength, color: 'purple-bg', width: compressorsWidth });
         if (electricalPanelLength > 0) parts.push({ name: 'Electrical Panel', length: electricalPanelLength, color: 'orange-bg', width: electricalPanelWidth });
     
         let totalGapWidth = 0;
@@ -624,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const walkInSpace = isWalkIn ? 1000 : 0;
         const maxWidth = Math.max(...parts.map(p => p.width));
-    
+
         const effectiveTotalLength = totalLength + (hasCladding ? claddingThickness * 2 : 0) + extraRightPadding;
         const effectiveMaxWidth = maxWidth + (hasCladding ? claddingThickness * 2 : 0) + walkInSpace;
     
@@ -692,7 +727,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
             partsContainer.appendChild(partDiv);
         });
-    
+
+        if (sideWrapper && sidePartsContainer) {
+            const tanksHeight = getOverrideValue(manualOverrides.tanks.height) ?? machineHeight;
+            const compressorsHeight = getOverrideValue(manualOverrides.compressors.height) ?? machineHeight;
+            const panelHeight = getPanelHeight(panelType) + 150;
+
+            const sideParts = [];
+            if (tanksLength > 0) sideParts.push({ name: 'Tanks', length: tanksLength, height: tanksHeight, color: 'blue-bg' });
+            if (compressorsLength > 0) sideParts.push({ name: 'Compressors', length: compressorsLength, height: compressorsHeight, color: 'purple-bg' });
+            if (electricalPanelLength > 0) sideParts.push({ name: 'Electrical Panel', length: electricalPanelLength, height: panelHeight, color: 'orange-bg' });
+
+            const maxHeight = Math.max(...sideParts.map(p => p.height));
+            if (maxHeight > 0) {
+                const sideBorderPx = hasCladding ? claddingThickness * scale : 0;
+                const sideBaseBorderPx = hasCladding ? sideBorderPx : 1;
+                const sideWrapperHeight = (maxHeight * scale) + (sideBaseBorderPx * 2);
+
+                sideWrapper.style.height = `${sideWrapperHeight}px`;
+                sidePartsContainer.style.height = `${maxHeight * scale}px`;
+                sidePartsContainer.style.width = `${totalLength * scale + totalGapWidth}px`;
+
+                if (hasCladding) {
+                    sideWrapper.style.border = `${sideBorderPx}px solid var(--line-strong)`;
+                }
+
+                sideParts.forEach((part, i) => {
+                    const partWidth = part.length * scale;
+                    const partDiv = document.createElement('div');
+                    partDiv.className = `side-part ${part.color}`;
+                    partDiv.style.width = `${partWidth}px`;
+                    partDiv.style.height = `${(part.height / maxHeight) * 100}%`;
+                    const heightDiv = document.createElement('div');
+                    heightDiv.className = 'side-dimensions';
+                    heightDiv.textContent = `H: ${part.height} mm`;
+                    partDiv.appendChild(heightDiv);
+                    if (gaps[i]) {
+                        partDiv.style.marginLeft = `${gapSize}px`;
+                    }
+                    sidePartsContainer.appendChild(partDiv);
+                });
+            }
+        }
+
         drawSumDimensions(dimensionsContainer, parts, scale, gaps, gapSize);
     
         // Update labels based on cladding. This applies to the multi-visualization containers.
@@ -711,7 +788,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         overallLengthOutput.textContent = `${effectiveTotalLength} mm`;
         overallWidthOutput.textContent = `${effectiveMaxWidth} mm`;
-        overallHeightOutput.textContent = `${machineHeight} mm`;
+        const heightValues = [
+            getOverrideValue(manualOverrides.tanks.height) ?? machineHeight,
+            getOverrideValue(manualOverrides.compressors.height) ?? machineHeight,
+            getOverrideValue(panelType === 'b2b' ? manualOverrides.b2b.height : manualOverrides.head.height) ?? machineHeight
+        ];
+        const effectiveHeight = Math.max(...heightValues.filter(v => v > 0));
+        overallHeightOutput.textContent = `${effectiveHeight} mm`;
         overallDimensionsDisplay.classList.remove('hidden');
     }
 
@@ -728,10 +811,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderVisualizationLockedState(elements) {
-        const { wrapper, partsContainer, dimensionsContainer, overallDimensionsDisplay } = elements;
+        const { wrapper, partsContainer, sideWrapper, sidePartsContainer, dimensionsContainer, overallDimensionsDisplay } = elements;
         partsContainer.innerHTML = '<div class="placeholder-text">Complete all required fields to display 2D visualization.</div>';
+        if (sidePartsContainer) {
+            sidePartsContainer.innerHTML = '<div class="placeholder-text">Complete all required fields to display side view.</div>';
+        }
         dimensionsContainer.innerHTML = '';
         wrapper.style.height = '';
+        if (sideWrapper) {
+            sideWrapper.style.height = '';
+            sideWrapper.style.border = '';
+        }
         overallDimensionsDisplay.classList.add('hidden');
     }
 
@@ -739,9 +829,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
         const readyForVisualization = hasAllRequiredSelectionsForVisualization();
 
+        const elementsSingle = {
+            wrapper: visualizationWrapper,
+            partsContainer: partsContainer,
+            sideWrapper: sideViewWrapper,
+            sidePartsContainer: sideViewContainer,
+            dimensionsContainer: dimensionsContainer,
+            overallDimensionsDisplay: overallDimensionsDisplay,
+            overallLengthOutput: overallLengthOutput,
+            overallWidthOutput: overallWidthOutput,
+            overallHeightOutput: overallHeightOutput
+        };
+
         const elementsB2B = {
             wrapper: visualizationWrapperB2B,
             partsContainer: partsContainerB2B,
+            sideWrapper: sideViewWrapperB2B,
+            sidePartsContainer: sideViewContainerB2B,
             dimensionsContainer: dimensionsContainerB2B,
             overallDimensionsDisplay: overallDimensionsDisplayB2B,
             overallLengthOutput: overallLengthOutputB2B,
@@ -755,6 +859,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const elementsHeadAligned = {
             wrapper: visualizationWrapperHeadAligned,
             partsContainer: partsContainerHeadAligned,
+            sideWrapper: sideViewWrapperHeadAligned,
+            sidePartsContainer: sideViewContainerHeadAligned,
             dimensionsContainer: dimensionsContainerHeadAligned,
             overallDimensionsDisplay: overallDimensionsDisplayHeadAligned,
             overallLengthOutput: overallLengthOutputHeadAligned,
@@ -768,6 +874,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const elementsHeadPerp = {
             wrapper: visualizationWrapperHeadPerp,
             partsContainer: partsContainerHeadPerp,
+            sideWrapper: sideViewWrapperHeadPerp,
+            sidePartsContainer: sideViewContainerHeadPerp,
             dimensionsContainer: dimensionsContainerHeadPerp,
             overallDimensionsDisplay: overallDimensionsDisplayHeadPerp,
             overallLengthOutput: overallLengthOutputHeadPerp,
@@ -789,6 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
             multiVisualizationContainer.children[2].classList.remove('hidden');
 
             if (!readyForVisualization) {
+                renderVisualizationLockedState(elementsSingle);
                 renderVisualizationLockedState(elementsB2B);
                 renderVisualizationLockedState(elementsHeadAligned);
                 renderVisualizationLockedState(elementsHeadPerp);
@@ -815,6 +924,7 @@ document.addEventListener('DOMContentLoaded', () => {
             multiVisualizationContainer.children[2].classList.add('hidden');
 
             if (!readyForVisualization) {
+                renderVisualizationLockedState(elementsSingle);
                 renderVisualizationLockedState(elementsB2B);
                 renderVisualizationLockedState(elementsHeadAligned);
                 return;
@@ -966,9 +1076,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         const card = document.createElement('button');
                         card.type = 'button';
                         card.className = 'panel-card';
+                        if (panel.nonStandard) {
+                            card.classList.add('non-standard');
+                        }
                         card.dataset.optionValue = option.value;
                         card.dataset.panelHeight = panel.H;
-                        card.innerHTML = `<span class="panel-title">${title}</span><span class="panel-dims">L=${panel.L}, W=${panel.W}, H=${panel.H}</span>`;
+                        const areaM2 = getPanelAreaM2(panel).toFixed(1);
+                        const areaPill = `<span class="panel-pill">${areaM2} m<sup>2</sup></span>`;
+                        const tagPill = panel.tag ? `<span class="panel-pill panel-pill--tag">${panel.tag}</span>` : '';
+                        card.innerHTML = `${tagPill}${areaPill}<span class="panel-title">${title}</span><span class="panel-dims">L=${panel.L}, W=${panel.W}, H=${panel.H}</span>`;
 
                         card.addEventListener('click', () => {
                             selectElement.value = option.value;
@@ -989,22 +1105,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyMagicFillPanels() {
-        const referenceHeight = getPanelPreferenceReferenceHeight();
+        const tankType = document.querySelector('input[name="tank-type"]:checked').value;
+        const receiverVolume = getLiquidReceiverVolume(
+            tankType,
+            liquidReceiverSelect.value,
+            coupledLiquidReceiverSelect.value
+        );
+        const areaLimit = getPanelAreaLimitByReceiverVolume(receiverVolume);
 
-        const pickPreferredOption = (selectElement) => {
-            const preferredOption = Array.from(selectElement.options).find((option) => {
-                if (option.value === '') return false;
-                const panel = dataQuadri[parseInt(option.value, 10)];
-                return panel && isPanelPreferredByHeight(panel.H, referenceHeight);
-            });
+        const pickBestOption = (selectElement) => {
+            const options = Array.from(selectElement.options)
+                .filter((option) => option.value !== '')
+                .map((option) => ({
+                    option,
+                    panel: dataQuadri[parseInt(option.value, 10)]
+                }))
+                .filter(({ panel }) => panel);
 
-            if (preferredOption) {
-                selectElement.value = preferredOption.value;
+            if (options.length === 0) return;
+
+            const candidates = areaLimit === null
+                ? options
+                : options.filter(({ panel }) => isPanelRecommendedByReceiverVolume(panel, receiverVolume));
+
+            const pool = candidates.length > 0 ? candidates : options;
+
+            const best = pool.reduce((acc, current) => {
+                const area = getPanelAreaM2(current.panel);
+                if (!acc || area > acc.area) {
+                    return { ...current, area };
+                }
+                return acc;
+            }, null);
+
+            if (best) {
+                selectElement.value = best.option.value;
             }
         };
 
-        pickPreferredOption(b2bPanelModelSelect);
-        pickPreferredOption(headPanelModelSelect);
+        pickBestOption(b2bPanelModelSelect);
+
+        const b2bSelectedIndex = b2bPanelModelSelect.value !== ''
+            ? parseInt(b2bPanelModelSelect.value, 10)
+            : null;
+        const b2bPanel = b2bSelectedIndex !== null ? dataQuadri[b2bSelectedIndex] : null;
+        const headLengthMap = {
+            800: 1400,
+            1000: 1800,
+            1200: 2200,
+            1400: 2400
+        };
+
+        if (b2bPanel && headLengthMap[b2bPanel.L]) {
+            const targetHeadLength = headLengthMap[b2bPanel.L];
+            const headOption = Array.from(headPanelModelSelect.options).find((option) => {
+                if (option.value === '') return false;
+                const panel = dataQuadri[parseInt(option.value, 10)];
+                return panel && panel.typ === 'T' && panel.L === targetHeadLength;
+            });
+            if (headOption) {
+                headPanelModelSelect.value = headOption.value;
+            }
+        } else {
+            pickBestOption(headPanelModelSelect);
+        }
         handlePanelChange();
     }
 
@@ -1031,6 +1195,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const noPanelSelected = b2bPanelModelSelect.value === '' && headPanelModelSelect.value === '';
         setFieldRequiredHint(b2bPanelModelSelect, true, noPanelSelected);
         setFieldRequiredHint(headPanelModelSelect, true, noPanelSelected);
+
+        const tanksMissing = (isSingle && liquidReceiverSelect.value === '') ||
+            (!isSingle && coupledLiquidReceiverSelect.value === '') ||
+            mtSuctionAccumulatorSelect.value === '';
+        const compressorsMissing = oilSeparatorSelect.value === '';
+        const panelsMissing = noPanelSelected;
+
+        if (tanksCard) tanksCard.classList.toggle('needs-input-section', tanksMissing);
+        if (compressorsCard) compressorsCard.classList.toggle('needs-input-section', compressorsMissing);
+        if (panelsCard) panelsCard.classList.toggle('needs-input-section', panelsMissing);
     }
 
     b2bPanelModelSelect.addEventListener('change', handlePanelChange);
@@ -1157,6 +1331,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Reset machine width to its default. Lengths are reset automatically
                 // because their calculation functions will run and overwrite the display.
                 currentMachineWidth = 1200;
+                manualOverrides.tanks.width = null;
+                manualOverrides.tanks.height = null;
+                manualOverrides.compressors.width = null;
+                manualOverrides.compressors.height = null;
+                manualOverrides.head.length = null;
+                manualOverrides.head.width = null;
+                manualOverrides.head.height = null;
+                manualOverrides.b2b.length = null;
+                manualOverrides.b2b.width = null;
+                manualOverrides.b2b.height = null;
+                setOverrideIndicator(false);
             }
 
             updateCompletionHints();
@@ -1170,15 +1355,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const overrideModal = document.getElementById('override-modal');
     const manualTanksLength = document.getElementById('manual-tanks-length');
     const manualCompressorsLength = document.getElementById('manual-compressors-length');
-    const manualMachineWidth = document.getElementById('manual-machine-width');
-    const manualMachineHeight = document.getElementById('manual-machine-height');
+    const manualTanksWidth = document.getElementById('manual-tanks-width');
+    const manualTanksHeight = document.getElementById('manual-tanks-height');
+    const manualCompressorsWidth = document.getElementById('manual-compressors-width');
+    const manualCompressorsHeight = document.getElementById('manual-compressors-height');
+    const manualHeadLength = document.getElementById('manual-head-length');
+    const manualHeadWidth = document.getElementById('manual-head-width');
+    const manualHeadHeight = document.getElementById('manual-head-height');
+    const manualB2BLength = document.getElementById('manual-b2b-length');
+    const manualB2BWidth = document.getElementById('manual-b2b-width');
+    const manualB2BHeight = document.getElementById('manual-b2b-height');
+    const overrideActiveIndicator = document.getElementById('override-active-indicator');
+
+    const setOverrideIndicator = (isActive) => {
+        if (!overrideActiveIndicator) return;
+        overrideActiveIndicator.classList.toggle('hidden', !isActive);
+    };
 
     showOverrideBtn.addEventListener('click', () => {
         // Populate modal with current values before showing
         manualTanksLength.value = parseInt(tanksLengthOutput.textContent) || '';
         manualCompressorsLength.value = parseInt(compressorsLengthOutput.textContent) || '';
-        manualMachineWidth.value = currentMachineWidth;
-        manualMachineHeight.value = machineHeight;
+        manualTanksWidth.value = getOverrideValue(manualOverrides.tanks.width) ?? (parseInt(tanksWidthOutput.textContent) || '');
+        manualTanksHeight.value = getOverrideValue(manualOverrides.tanks.height) ?? (machineHeight || '');
+        manualCompressorsWidth.value = getOverrideValue(manualOverrides.compressors.width) ?? (parseInt(compressorsWidthOutput.textContent) || '');
+        manualCompressorsHeight.value = getOverrideValue(manualOverrides.compressors.height) ?? (machineHeight || '');
+
+        const selectedHeadPanel = headPanelModelSelect.value !== ''
+            ? dataQuadri[parseInt(headPanelModelSelect.value, 10)]
+            : null;
+        const selectedB2BPanel = b2bPanelModelSelect.value !== ''
+            ? dataQuadri[parseInt(b2bPanelModelSelect.value, 10)]
+            : null;
+
+        manualHeadLength.value = getOverrideValue(manualOverrides.head.length) ?? (selectedHeadPanel ? selectedHeadPanel.L : '');
+        manualHeadWidth.value = getOverrideValue(manualOverrides.head.width) ?? (selectedHeadPanel ? selectedHeadPanel.W : '');
+        manualHeadHeight.value = getOverrideValue(manualOverrides.head.height) ?? (selectedHeadPanel ? selectedHeadPanel.H : '');
+        manualB2BLength.value = getOverrideValue(manualOverrides.b2b.length) ?? (selectedB2BPanel ? selectedB2BPanel.L : '');
+        manualB2BWidth.value = getOverrideValue(manualOverrides.b2b.width) ?? (selectedB2BPanel ? selectedB2BPanel.W : '');
+        manualB2BHeight.value = getOverrideValue(manualOverrides.b2b.height) ?? (selectedB2BPanel ? selectedB2BPanel.H : '');
         overrideModal.classList.remove('hidden');
     });
 
@@ -1196,8 +1411,16 @@ document.addEventListener('DOMContentLoaded', () => {
     applyOverrideBtn.addEventListener('click', () => {
         const newTanksLength = parseInt(manualTanksLength.value);
         const newCompressorsLength = parseInt(manualCompressorsLength.value);
-        const newWidth = parseInt(manualMachineWidth.value);
-        const newHeight = parseInt(manualMachineHeight.value);
+        const newTanksWidth = parseInt(manualTanksWidth.value);
+        const newTanksHeight = parseInt(manualTanksHeight.value);
+        const newCompressorsWidth = parseInt(manualCompressorsWidth.value);
+        const newCompressorsHeight = parseInt(manualCompressorsHeight.value);
+        const newHeadLength = parseInt(manualHeadLength.value);
+        const newHeadWidth = parseInt(manualHeadWidth.value);
+        const newHeadHeight = parseInt(manualHeadHeight.value);
+        const newB2BLength = parseInt(manualB2BLength.value);
+        const newB2BWidth = parseInt(manualB2BWidth.value);
+        const newB2BHeight = parseInt(manualB2BHeight.value);
 
         let overrideApplied = false;
 
@@ -1210,18 +1433,88 @@ document.addEventListener('DOMContentLoaded', () => {
             compressorsLengthOutput.textContent = `${newCompressorsLength} mm`;
             overrideApplied = true;
         }
-        if (!isNaN(newWidth) && newWidth > 0) {
-            currentMachineWidth = newWidth;
+        if (!isNaN(newTanksWidth) && newTanksWidth > 0) {
+            manualOverrides.tanks.width = newTanksWidth;
+            tanksWidthOutput.textContent = `${newTanksWidth} mm`;
             overrideApplied = true;
+        } else {
+            manualOverrides.tanks.width = null;
+            tanksWidthOutput.textContent = `${tanksSectionWidth} mm`;
         }
-        if (!isNaN(newHeight) && newHeight >= 0) {
-            machineHeight = newHeight;
-            machineHeightOutput.textContent = `${machineHeight} mm`;
+        if (!isNaN(newTanksHeight) && newTanksHeight > 0) {
+            manualOverrides.tanks.height = newTanksHeight;
             overrideApplied = true;
+        } else {
+            manualOverrides.tanks.height = null;
+        }
+        if (!isNaN(newCompressorsWidth) && newCompressorsWidth > 0) {
+            manualOverrides.compressors.width = newCompressorsWidth;
+            compressorsWidthOutput.textContent = `${newCompressorsWidth} mm`;
+            overrideApplied = true;
+        } else {
+            manualOverrides.compressors.width = null;
+            compressorsWidthOutput.textContent = `${currentMachineWidth} mm`;
+        }
+        if (!isNaN(newCompressorsHeight) && newCompressorsHeight > 0) {
+            manualOverrides.compressors.height = newCompressorsHeight;
+            overrideApplied = true;
+        } else {
+            manualOverrides.compressors.height = null;
+        }
+        if (!isNaN(newHeadWidth) && newHeadWidth > 0) {
+            manualOverrides.head.width = newHeadWidth;
+            overrideApplied = true;
+        } else {
+            manualOverrides.head.width = null;
+        }
+        if (!isNaN(newHeadLength) && newHeadLength > 0) {
+            manualOverrides.head.length = newHeadLength;
+            overrideApplied = true;
+        } else {
+            manualOverrides.head.length = null;
+        }
+        if (!isNaN(newHeadHeight) && newHeadHeight > 0) {
+            manualOverrides.head.height = newHeadHeight;
+            overrideApplied = true;
+        } else {
+            manualOverrides.head.height = null;
+        }
+        if (!isNaN(newB2BWidth) && newB2BWidth > 0) {
+            manualOverrides.b2b.width = newB2BWidth;
+            overrideApplied = true;
+        } else {
+            manualOverrides.b2b.width = null;
+        }
+        if (!isNaN(newB2BLength) && newB2BLength > 0) {
+            manualOverrides.b2b.length = newB2BLength;
+            overrideApplied = true;
+        } else {
+            manualOverrides.b2b.length = null;
+        }
+        if (!isNaN(newB2BHeight) && newB2BHeight > 0) {
+            manualOverrides.b2b.height = newB2BHeight;
+            overrideApplied = true;
+        } else {
+            manualOverrides.b2b.height = null;
+        }
+
+        const overrideHeights = [
+            manualOverrides.tanks.height,
+            manualOverrides.compressors.height,
+            manualOverrides.head.height,
+            manualOverrides.b2b.height
+        ].filter((value) => value && value > 0);
+        if (overrideHeights.length > 0) {
+            machineHeight = Math.max(...overrideHeights);
+            machineHeightOutput.textContent = `${machineHeight} mm`;
         }
 
         if (overrideApplied) {
             isManualOverrideActive = true;
+            setOverrideIndicator(true);
+        } else {
+            isManualOverrideActive = false;
+            setOverrideIndicator(false);
         }
 
         updatePanelPreferenceHints();
@@ -1449,8 +1742,15 @@ Electrical Panel
                 });
             }
 
+            // Recalculate layouts under PDF styles to avoid overlaps/clipping
+            updateVisualization();
+
             // Now that the cards are modified for the PDF, generate the canvas promises
-            const promises = vizCardsToRender.map(card => html2canvas(card));
+            const promises = vizCardsToRender.map(card => html2canvas(card, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true
+            }));
 
             doc.setFontSize(18);
             doc.text('Machine Size Configurator Summary', margin, 20);

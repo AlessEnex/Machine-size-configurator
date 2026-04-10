@@ -11,19 +11,14 @@ const dataQuadri = [
     { typ: "B2B", L: 800, H: 1800, W: 800 },
     { typ: "B2B", L: 1000, H: 1800, W: 800 },
     { typ: "B2B", L: 1200, H: 1800, W: 1000 },
-    { typ: "B2B", L: 1200, H: 2000, W: 800 },
+    { typ: "B2B", L: 1400, H: 2000, W: 1000 },
 
     // --- TIPOLOGIA: T (Testa/Head) --- // L -> length, W -> width
-    { typ: "T", L: 800, H: 1400, W: 400 },
-    { typ: "T", L: 800, H: 1800, W: 500 },
     { typ: "T", L: 1400, H: 1800, W: 500 },
     { typ: "T", L: 1800, H: 1800, W: 500 },
-    { typ: "T", L: 1800, H: 2000, W: 500 },
-    { typ: "T", L: 2000, H: 1800, W: 500 },
     { typ: "T", L: 2200, H: 1800, W: 500 },
-    { typ: "T", L: 2200, H: 2000, W: 500 },
     { typ: "T", L: 2400, H: 2000, W: 500 },
-    { typ: "T", L: 2800, H: 2000, W: 500 }
+    { typ: "T", L: 2800, H: 2000, W: 500, tag: "JUMBO" }
 ];
 
 export default dataQuadri;
