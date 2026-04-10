@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructions - Machine Size Configurator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="configurator-container">
+        <div class="header">
+            <h1>Instructions</h1>
+            <div class="header-actions">
+                <a href="index.html" class="info-button">Back to Configurator</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Overview</h2>
+            <p>This guide helps new users use the configurator to obtain preliminary machine dimensions and 2D views.</p>
+        </div>
+
+        <div class="card">
+            <h2>Quick Flow</h2>
+            <ol>
+                <li>Fill in the base information (Job, Cladding, Connections).</li>
+                <li>Select tank data (Liquid Receiver and MT Suction Accumulator).</li>
+                <li>Configure compressors and choose the Oil Separator.</li>
+                <li>Select the B2B or Head electrical panel (you can use Magic Fill).</li>
+                <li>Review the Top/Front views and apply a Manual Override if needed.</li>
+                <li>Export the PDF with the desired configurations.</li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h2>Required Sections</h2>
+            <p>Sections with a yellow border indicate missing data needed to run calculations and visualization.</p>
+            <ul>
+                <li><strong>Tanks:</strong> Liquid Receiver (single or coupled) + MT Suction Accumulator.</li>
+                <li><strong>Compressors:</strong> Oil Separator.</li>
+                <li><strong>Panels:</strong> select at least one panel (B2B or Head).</li>
+            </ul>
+            <figure class="instruction-shot" data-target="#card-tanks" data-caption="Tanks Section">
+                <div class="shot-placeholder">Loading screenshot…</div>
+                <figcaption>Tanks Section</figcaption>
+            </figure>
+            <figure class="instruction-shot" data-target="#card-compressors" data-caption="Compressors Section">
+                <div class="shot-placeholder">Loading screenshot…</div>
+                <figcaption>Compressors Section</figcaption>
+            </figure>
+            <figure class="instruction-shot" data-target="#card-panels" data-caption="Electrical Panels Section">
+                <div class="shot-placeholder">Loading screenshot…</div>
+                <figcaption>Electrical Panels Section</figcaption>
+            </figure>
+        </div>
+
+        <div class="card">
+            <h2>Magic Fill (Panels)</h2>
+            <p>The star button ✶ with the <strong>Magic Fill</strong> label automatically proposes panels based on the Liquid Receiver volume:</p>
+            <ul>
+                <li>If volume ≤ 300 L → selects the largest panel with area ≤ 3 m².</li>
+                <li>If volume ≤ 700 L → selects the largest panel with area ≤ 5 m².</li>
+                <li>If volume > 700 L → selects the largest available panel.</li>
+            </ul>
+            <p>The head panel is derived from the selected B2B:</p>
+            <ul>
+                <li>B2B L800 → Head L1400</li>
+                <li>B2B L1000 → Head L1800</li>
+                <li>B2B L1200 → Head L2200</li>
+                <li>B2B L1400 → Head L2400</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>2D Views</h2>
+            <p>Each configuration shows:</p>
+            <ul>
+                <li><strong>Top view:</strong> layout in plan (L/W).</li>
+                <li><strong>Front view:</strong> side view with heights (H). The panel always has H = panel H + 150.</li>
+            </ul>
+            <p>When cladding is active, it is shown as a single enclosure that includes the modules.</p>
+            <figure class="instruction-shot" data-target="#multi-visualization-container .card.drawing-container" data-caption="2D view with Top and Front view">
+                <div class="shot-placeholder">Loading screenshot…</div>
+                <figcaption>2D View (Top + Front)</figcaption>
+            </figure>
+        </div>
+
+        <div class="card">
+            <h2>Manual Override</h2>
+            <p>You can override the dimensions of each module (L/W/H). When Manual Override is active, a “Manual Override Active” badge appears.</p>
+            <p>Note: if you change the main options, overrides are automatically reset.</p>
+            <figure class="instruction-shot" data-target="#override-modal .modal-content" data-click="#show-override-btn" data-close="#close-override-btn" data-caption="Manual Override">
+                <div class="shot-placeholder">Loading screenshot…</div>
+                <figcaption>Manual Override</figcaption>
+            </figure>
+        </div>
+
+        <div class="card">
+            <h2>PDF Export</h2>
+            <p>Select the configurations to include and generate the PDF. With Cladding = “No”, printable options for “Attached/Not Attached” are added.</p>
+        </div>
+    </div>
+
+    <iframe id="screenshot-source" class="shot-source" src="index.html" aria-hidden="true" tabindex="-1"></iframe>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        (() => {
+            const iframe = document.getElementById('screenshot-source');
+            if (!iframe) return;
+
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const shots = Array.from(document.querySelectorAll('.instruction-shot'));
+
+            const renderShot = async (shot, doc, html2canvasFn) => {
+                const clickTarget = shot.dataset.click;
+                if (clickTarget) {
+                    const trigger = doc.querySelector(clickTarget);
+                    if (trigger) {
+                        trigger.click();
+                        await wait(250);
+                    }
+                }
+
+                const target = doc.querySelector(shot.dataset.target);
+                if (!target) {
+                    const placeholder = shot.querySelector('.shot-placeholder');
+                    if (placeholder) placeholder.textContent = 'Screenshot non disponibile.';
+                    return;
+                }
+
+                const canvas = await html2canvasFn(target, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false
+                });
+
+                const img = new Image();
+                img.className = 'shot-image';
+                img.alt = shot.dataset.caption || 'Screenshot';
+                img.src = canvas.toDataURL('image/png');
+                const placeholder = shot.querySelector('.shot-placeholder');
+                if (placeholder) {
+                    placeholder.replaceWith(img);
+                } else {
+                    shot.appendChild(img);
+                }
+
+                const closeTarget = shot.dataset.close;
+                if (closeTarget) {
+                    const closer = doc.querySelector(closeTarget);
+                    if (closer) {
+                        closer.click();
+                        await wait(150);
+                    }
+                }
+            };
+
+            iframe.addEventListener('load', async () => {
+                await wait(800);
+                const doc = iframe.contentDocument;
+                const html2canvasFn = iframe.contentWindow.html2canvas || window.html2canvas;
+                if (!doc || !html2canvasFn) {
+                    shots.forEach(shot => {
+                        const placeholder = shot.querySelector('.shot-placeholder');
+                        if (placeholder) placeholder.textContent = 'Screenshot non disponibile.';
+                    });
+                    return;
+                }
+
+                for (const shot of shots) {
+                    await renderShot(shot, doc, html2canvasFn);
+                    await wait(200);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

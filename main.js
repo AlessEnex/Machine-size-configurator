@@ -1205,6 +1205,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tanksCard) tanksCard.classList.toggle('needs-input-section', tanksMissing);
         if (compressorsCard) compressorsCard.classList.toggle('needs-input-section', compressorsMissing);
         if (panelsCard) panelsCard.classList.toggle('needs-input-section', panelsMissing);
+
+        if (magicCompileOilSeparatorBtn) {
+            magicCompileOilSeparatorBtn.classList.toggle('pulse-attention', compressorsMissing);
+        }
+        if (magicFillPanelsBtn) {
+            magicFillPanelsBtn.classList.toggle('pulse-attention', panelsMissing);
+        }
     }
 
     b2bPanelModelSelect.addEventListener('change', handlePanelChange);

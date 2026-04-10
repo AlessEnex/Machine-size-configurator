@@ -11,7 +11,10 @@
     <div class="configurator-container">
         <div class="header">
             <h1>Machine Size Configurator</h1>
-            <button id="show-rules-btn" class="info-button">Calculation Rules</button>
+            <div class="header-actions">
+                <a href="istruzioni.html" class="info-button">Instructions</a>
+                <button id="show-rules-btn" class="info-button">Calculation Rules</button>
+            </div>
         </div>
 
         <div class="card grey-t">
@@ -290,6 +293,7 @@
                     <button id="magic-compile-oil-separator-btn" type="button" class="info-button magic-compile-btn icon-only-btn" title="Magic Compile Oil Separator" aria-label="Magic Compile Oil Separator">
                         &#10022;
                     </button>
+                    <span class="magic-label">Magic Fill</span>
                 </div>
             </div>
 
@@ -336,6 +340,7 @@
                 <button id="magic-fill-panels-btn" type="button" class="info-button icon-only-btn" title="Magic Fill Panels" aria-label="Magic Fill Panels">
                     &#10022;
                 </button>
+                <span class="magic-label">Magic Fill</span>
             </div>
 
             <div id="b2b-panel-group">
@@ -390,7 +395,7 @@
 
         <div class="pre-visualization-controls">
             <button id="show-override-btn" class="info-button">Manual Override</button>
-            <span id="override-active-indicator" class="override-indicator hidden">Manuale attivo</span>
+            <span id="override-active-indicator" class="override-indicator hidden">Manual Override Active</span>
         </div>
 
         <div id="single-visualization-container" class="card drawing-container">
@@ -618,7 +623,7 @@
 
                 <div class="override-grid">
                     <div class="override-section">
-                        <div class="override-title">Serbatoi</div>
+                    <div class="override-title">Tanks</div>
                         <div class="input-group">
                             <label for="manual-tanks-length">Tanks Section Length (mm)</label>
                             <input type="number" id="manual-tanks-length" placeholder="e.g., 3500" min="0">
@@ -636,7 +641,7 @@
                     </div>
 
                     <div class="override-section">
-                        <div class="override-title">Compressori</div>
+                    <div class="override-title">Compressors</div>
                         <div class="input-group">
                             <label for="manual-compressors-length">Compressors Section Length (mm)</label>
                             <input type="number" id="manual-compressors-length" placeholder="e.g., 4200" min="0">
@@ -654,7 +659,7 @@
                     </div>
 
                     <div class="override-section">
-                        <div class="override-title">Quadro elettrico di testa</div>
+                    <div class="override-title">Head Electrical Panel</div>
                         <div class="input-group">
                             <label for="manual-head-length">Head Panel Length (mm)</label>
                             <input type="number" id="manual-head-length" placeholder="e.g., 1800" min="0">
@@ -672,7 +677,7 @@
                     </div>
 
                     <div class="override-section">
-                        <div class="override-title">Quadro elettrico B2B</div>
+                    <div class="override-title">B2B Electrical Panel</div>
                         <div class="input-group">
                             <label for="manual-b2b-length">B2B Panel Length (mm)</label>
                             <input type="number" id="manual-b2b-length" placeholder="e.g., 1000" min="0">
