@@ -1710,6 +1710,9 @@ Electrical Panel
         }
 
         const { jsPDF } = window.jspdf;
+        const PDF_CANVAS_SCALE = 1.25;
+        const PDF_JPEG_QUALITY = 0.72;
+        const PDF_MAX_IMAGE_WIDTH = 1600;
         const doc = new jsPDF();
         const summaryText = generateSummaryText();
         const claddingValue = document.querySelector('input[name="cladding"]:checked').value;
@@ -1768,7 +1771,7 @@ Electrical Panel
 
             // Now that the cards are modified for the PDF, generate the canvas promises
             const promises = vizCardsToRender.map(card => html2canvas(card, {
-                scale: 2,
+                scale: PDF_CANVAS_SCALE,
                 backgroundColor: '#ffffff',
                 useCORS: true
             }));
@@ -1807,17 +1810,40 @@ Electrical Panel
                 currentY += lineHeight;
             });
 
-            const addImageToPdf = (canvas, yPos) => {
-                const imgData = canvas.toDataURL('image/png');
+            const canvasToCompressedPdfImage = (canvas) => {
+                let sourceCanvas = canvas;
+
+                if (canvas.width > PDF_MAX_IMAGE_WIDTH) {
+                    const scaleFactor = PDF_MAX_IMAGE_WIDTH / canvas.width;
+                    const resizedCanvas = document.createElement('canvas');
+                    resizedCanvas.width = PDF_MAX_IMAGE_WIDTH;
+                    resizedCanvas.height = Math.round(canvas.height * scaleFactor);
+
+                    const context = resizedCanvas.getContext('2d');
+                    context.fillStyle = '#ffffff';
+                    context.fillRect(0, 0, resizedCanvas.width, resizedCanvas.height);
+                    context.drawImage(canvas, 0, 0, resizedCanvas.width, resizedCanvas.height);
+                    sourceCanvas = resizedCanvas;
+                }
+
+                const imgData = sourceCanvas.toDataURL('image/jpeg', PDF_JPEG_QUALITY);
                 const imgProps = doc.getImageProperties(imgData);
+                return {
+                    data: imgData,
+                    width: imgProps.width,
+                    height: imgProps.height
+                };
+            };
+
+            const addImageToPdf = (image, yPos) => {
                 const imgWidth = contentWidth;
-                const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+                const imgHeight = (image.height * imgWidth) / image.width;
 
                 if (yPos + imgHeight > doc.internal.pageSize.getHeight() - margin) {
                     doc.addPage();
                     yPos = margin;
                 }
-                doc.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
+                doc.addImage(image.data, 'JPEG', margin, yPos, imgWidth, imgHeight, undefined, 'FAST');
                 return yPos + imgHeight + 20; // Return new Y position, with further reduced space
             };
 
@@ -1843,6 +1869,7 @@ Electrical Panel
             };
 
             const addImagesAndSave = (canvases) => {
+                const compressedImages = canvases.map(canvasToCompressedPdfImage);
                 // --- Disclaimer Logic ---
                 const disclaimerTitle = "Disclaimer";
                 const disclaimerTextEn = "The measurements below are indicative and are intended to help in choosing the machine configuration. If the measurements are not satisfactory, please request a custom quotation. Please note that if no option is selected below, we will choose the configuration that best suits our needs.";
@@ -1863,9 +1890,8 @@ Electrical Panel
                 const suggestionsHeight = ((titleLines.length + contentLines.length) * lineHeight) + 5; // +5 for spacing
 
                 // Calculate height of the first image to check for page break
-                const firstCanvas = canvases[0];
-                const imgProps = doc.getImageProperties(firstCanvas.toDataURL('image/png'));
-                const firstImageHeight = (imgProps.height * contentWidth) / imgProps.width;
+                const firstImage = compressedImages[0];
+                const firstImageHeight = (firstImage.height * contentWidth) / firstImage.width;
 
                 // Always start the disclaimer section on a new page
                 doc.addPage();
@@ -1899,8 +1925,8 @@ Electrical Panel
                 let imageY = currentY + 5; // Start images after suggestions, with reduced space
 
                 // Add all canvases to the PDF
-                canvases.forEach(canvas => {
-                    imageY = addImageToPdf(canvas, imageY);
+                compressedImages.forEach(image => {
+                    imageY = addImageToPdf(image, imageY);
                 });
 
                 doc.save(buildPdfFileName());
