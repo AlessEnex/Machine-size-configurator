@@ -526,6 +526,21 @@ select.non-preferred-selection {
   color: #2f4b3a;
 }
 
+.output-value.dimension-error-value {
+  color: #b91c1c;
+}
+
+.dimension-error {
+  margin-top: var(--space-2);
+  padding: 8px 10px;
+  border: 1px solid rgba(185, 28, 28, 0.45);
+  border-radius: var(--radius-sm);
+  background: rgba(254, 226, 226, 0.9);
+  color: #991b1b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .pre-visualization-controls,
 .export-controls {
   display: flex;
@@ -1020,6 +1035,11 @@ select.non-preferred-selection {
   overflow: visible !important;
   padding-top: 12px;
   padding-bottom: 12px;
+}
+
+.pdf-export-active .drawing-wrapper.has-cladding,
+.pdf-export-active .side-view-wrapper.has-cladding {
+  border: 2px solid black !important;
 }
 
 .pdf-export-active .opening-label {

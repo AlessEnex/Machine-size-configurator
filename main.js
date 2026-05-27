@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMachineWidth = 1200; // Global variable for machine width
     let machineHeight = 0; // Global variable for machine height
     let tanksSectionWidth = 1200; // Global variable for tanks section width
+    const WALK_IN_BOX_HEIGHT = 2500;
+    const MAX_OVERALL_WIDTH = 2350;
     let isManualOverrideActive = false; // Flag to track if override is active
     const manualOverrides = {
         tanks: { width: null, height: null },
@@ -42,6 +44,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getOverrideValue(value) {
         return Number.isFinite(value) && value > 0 ? value : null;
+    }
+
+    function getEffectiveModuleWidths() {
+        const tanksLength = parseInt(tanksLengthOutput.textContent) || 0;
+        const compressorsLength = parseInt(compressorsLengthOutput.textContent) || 0;
+        const rawTanksWidth = getOverrideValue(manualOverrides.tanks.width) ?? tanksSectionWidth;
+        const rawCompressorsWidth = getOverrideValue(manualOverrides.compressors.width) ?? currentMachineWidth;
+
+        if (tanksLength > 0 && compressorsLength > 0) {
+            const sharedWidth = Math.max(rawTanksWidth, rawCompressorsWidth);
+            return { tanksWidth: sharedWidth, compressorsWidth: sharedWidth };
+        }
+
+        return {
+            tanksWidth: tanksLength > 0 ? rawTanksWidth : 0,
+            compressorsWidth: compressorsLength > 0 ? rawCompressorsWidth : 0
+        };
+    }
+
+    function updateModuleWidthOutputs() {
+        const { tanksWidth, compressorsWidth } = getEffectiveModuleWidths();
+        tanksWidthOutput.textContent = tanksWidth > 0 ? `${tanksWidth} mm` : '0 mm';
+        compressorsWidthOutput.textContent = compressorsWidth > 0 ? `${compressorsWidth} mm` : '0 mm';
+    }
+
+    function updateOverallWidthError(container, widthOutput, width) {
+        if (!container) return;
+
+        let error = container.querySelector('.dimension-error');
+        if (!error) {
+            error = document.createElement('div');
+            error.className = 'dimension-error hidden';
+            container.appendChild(error);
+        }
+
+        const exceedsLimit = width > MAX_OVERALL_WIDTH;
+        error.classList.toggle('hidden', !exceedsLimit);
+        if (widthOutput) {
+            widthOutput.classList.toggle('dimension-error-value', exceedsLimit);
+        }
+
+        if (exceedsLimit) {
+            error.textContent = `Error: overall width ${width} mm exceeds the ${MAX_OVERALL_WIDTH} mm limit.`;
+        }
+    }
+
+    function clearOverallWidthError(container) {
+        if (!container) return;
+        const error = container.querySelector('.dimension-error');
+        if (error) error.classList.add('hidden');
+        const value = container.querySelector('.dimension-error-value');
+        if (value) value.classList.remove('dimension-error-value');
     }
 
     // --- GENERAL CONFIG ---
@@ -237,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update the output display
         tanksLengthOutput.textContent = `${finalLength} mm`;
-        tanksWidthOutput.textContent = finalLength > 0 ? `${tanksSectionWidth} mm` : '0 mm';
+        updateModuleWidthOutputs();
         machineHeightOutput.textContent = `${machineHeight} mm`;
         updatePanelPreferenceHints();
         updateVisualization();
@@ -455,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         compressorsLengthOutput.textContent = `${finalLength} mm`;
-        compressorsWidthOutput.textContent = finalLength > 0 ? `${currentMachineWidth} mm` : '0 mm';
+        updateModuleWidthOutputs();
         updateVisualization();
         updateSumConfigState();
     }
@@ -589,7 +643,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const isWalkIn = claddingValue === 'yes_walk_in';
         const claddingThickness = 50; // mm
     
-        const finalSharedWidth = Math.max(tanksSectionWidth, currentMachineWidth);
         const totalLength = tanksLength + compressorsLength + electricalPanelLength;
     
         // --- Special Alignment Logic Check ---
@@ -604,11 +657,15 @@ document.addEventListener('DOMContentLoaded', () => {
         wrapper.style.padding = '0';
         wrapper.style.backgroundColor = '';
         wrapper.style.border = '';
+        wrapper.classList.toggle('has-cladding', hasCladding);
+        wrapper.classList.toggle('has-walk-in', isWalkIn);
         if (sideWrapper) {
             sideWrapper.style.padding = '0';
             sideWrapper.style.backgroundColor = '';
             sideWrapper.style.border = '';
             sideWrapper.style.height = '';
+            sideWrapper.classList.toggle('has-cladding', hasCladding);
+            sideWrapper.classList.toggle('has-walk-in', isWalkIn);
         }
         overallDimensionsDisplay.classList.add('hidden');
     
@@ -624,14 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sumConfig = document.querySelector('input[name="sum-config"]:checked').value;
         const gapSize = 20;
     
-        const hasManualSectionWidth = getOverrideValue(manualOverrides.tanks.width) !== null ||
-            getOverrideValue(manualOverrides.compressors.width) !== null;
-        const tanksWidth = hasManualSectionWidth
-            ? (getOverrideValue(manualOverrides.tanks.width) ?? tanksSectionWidth)
-            : finalSharedWidth;
-        const compressorsWidth = hasManualSectionWidth
-            ? (getOverrideValue(manualOverrides.compressors.width) ?? currentMachineWidth)
-            : finalSharedWidth;
+        const { tanksWidth, compressorsWidth } = getEffectiveModuleWidths();
 
         const parts = [];
         if (tanksLength > 0) parts.push({ name: 'Tanks', length: tanksLength, color: 'blue-bg', width: tanksWidth });
@@ -746,13 +796,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (electricalPanelLength > 0) sideParts.push({ name: 'Electrical Panel', length: electricalPanelLength, height: panelHeight, color: 'orange-bg' });
 
             const maxHeight = Math.max(...sideParts.map(p => p.height));
-            if (maxHeight > 0) {
+            const enclosureHeight = isWalkIn ? WALK_IN_BOX_HEIGHT : maxHeight;
+            if (enclosureHeight > 0) {
                 const sideBorderPx = hasCladding ? claddingThickness * scale : 0;
                 const sideBaseBorderPx = hasCladding ? sideBorderPx : 1;
-                const sideWrapperHeight = (maxHeight * scale) + (sideBaseBorderPx * 2);
+                const sideWrapperHeight = (enclosureHeight * scale) + (sideBaseBorderPx * 2);
 
                 sideWrapper.style.height = `${sideWrapperHeight}px`;
-                sidePartsContainer.style.height = `${maxHeight * scale}px`;
+                sidePartsContainer.style.height = `${enclosureHeight * scale}px`;
                 sidePartsContainer.style.width = `${totalLength * scale + totalGapWidth}px`;
 
                 if (hasCladding) {
@@ -764,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const partDiv = document.createElement('div');
                     partDiv.className = `side-part ${part.color}`;
                     partDiv.style.width = `${partWidth}px`;
-                    partDiv.style.height = `${(part.height / maxHeight) * 100}%`;
+                    partDiv.style.height = `${(part.height / enclosureHeight) * 100}%`;
                     const heightDiv = document.createElement('div');
                     heightDiv.className = 'side-dimensions';
                     heightDiv.textContent = `H: ${part.height} mm`;
@@ -795,12 +846,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         overallLengthOutput.textContent = `${effectiveTotalLength} mm`;
         overallWidthOutput.textContent = `${effectiveMaxWidth} mm`;
+        updateOverallWidthError(overallDimensionsDisplay, overallWidthOutput, effectiveMaxWidth);
         const heightValues = [
             getOverrideValue(manualOverrides.tanks.height) ?? machineHeight,
             getOverrideValue(manualOverrides.compressors.height) ?? machineHeight,
-            getOverrideValue(panelType === 'b2b' ? manualOverrides.b2b.height : manualOverrides.head.height) ?? machineHeight
+            getPanelHeight(panelType) + 150
         ];
-        const effectiveHeight = Math.max(...heightValues.filter(v => v > 0));
+        const moduleHeight = Math.max(...heightValues.filter(v => v > 0));
+        const effectiveHeight = isWalkIn ? WALK_IN_BOX_HEIGHT : moduleHeight;
         overallHeightOutput.textContent = `${effectiveHeight} mm`;
         overallDimensionsDisplay.classList.remove('hidden');
     }
@@ -825,10 +878,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         dimensionsContainer.innerHTML = '';
         wrapper.style.height = '';
+        wrapper.classList.remove('has-cladding', 'has-walk-in');
         if (sideWrapper) {
             sideWrapper.style.height = '';
             sideWrapper.style.border = '';
+            sideWrapper.classList.remove('has-cladding', 'has-walk-in');
         }
+        clearOverallWidthError(overallDimensionsDisplay);
         overallDimensionsDisplay.classList.add('hidden');
     }
 
@@ -1456,11 +1512,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!isNaN(newTanksWidth) && newTanksWidth > 0) {
             manualOverrides.tanks.width = newTanksWidth;
-            tanksWidthOutput.textContent = `${newTanksWidth} mm`;
             overrideApplied = true;
         } else {
             manualOverrides.tanks.width = null;
-            tanksWidthOutput.textContent = `${tanksSectionWidth} mm`;
         }
         if (!isNaN(newTanksHeight) && newTanksHeight > 0) {
             manualOverrides.tanks.height = newTanksHeight;
@@ -1470,11 +1524,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!isNaN(newCompressorsWidth) && newCompressorsWidth > 0) {
             manualOverrides.compressors.width = newCompressorsWidth;
-            compressorsWidthOutput.textContent = `${newCompressorsWidth} mm`;
             overrideApplied = true;
         } else {
             manualOverrides.compressors.width = null;
-            compressorsWidthOutput.textContent = `${currentMachineWidth} mm`;
         }
         if (!isNaN(newCompressorsHeight) && newCompressorsHeight > 0) {
             manualOverrides.compressors.height = newCompressorsHeight;
@@ -1539,6 +1591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updatePanelPreferenceHints();
+        updateModuleWidthOutputs();
         // Redraw and close
         updateVisualization();
         closeOverrideModal();

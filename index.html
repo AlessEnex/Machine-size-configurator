@@ -528,11 +528,13 @@
                 <h3>Overall Dimensions</h3>
                 <ul>
                     <li><strong>Cladding:</strong> Adds 50 mm to each side (total +100 mm to length and width).</li>
-                    <li><strong>Cladding (Walk-in):</strong> In addition to the standard 50 mm, it adds 1000 mm to the overall width.</li>
+                    <li><strong>Cladding (Walk-in):</strong> In addition to the standard 50 mm, it adds 1000 mm to the overall width and uses a 2500 mm enclosure height.</li>
+                    <li><strong>Overall Width Limit:</strong> An error is shown when the overall width exceeds 2350 mm.</li>
                     <li><strong>Machine Height:</strong>
                         <ul>
                             <li><strong>No Cladding:</strong> Height is determined by the selected tank volume.</li>
-                            <li><strong>With Cladding (Yes or Yes + Walk-in):</strong> Base height + 300 mm, capped at a maximum of 2500 mm.</li>
+                            <li><strong>With Cladding (Yes):</strong> Base height + 300 mm, capped at a maximum of 2500 mm.</li>
+                            <li><strong>With Cladding (Yes + Walk-in):</strong> The walk-in enclosure height is fixed at 2500 mm.</li>
                         </ul>
                     </li>
                 </ul>
@@ -592,6 +594,8 @@
                     <li><strong>No 6-Cyl, with LT 4-Cyl:</strong> 1100 mm.</li>
                     <li><strong>No 6-Cyl, with LT 2-Cyl (or no LT):</strong> 1000 mm.</li>
                 </ul>
+                <h4>Final Tanks and Compressors Width</h4>
+                <p>The tanks and compressors modules are compared after their own widths are calculated. The smaller module inherits the larger width. This rule does not apply to heights or to the electrical panel.</p>
 
                 <h3>Electrical Panel</h3>
                 <ul>
